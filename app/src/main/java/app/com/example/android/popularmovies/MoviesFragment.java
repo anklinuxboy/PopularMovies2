@@ -8,6 +8,8 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -16,6 +18,7 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.GridView;
 
@@ -38,6 +41,7 @@ public class MoviesFragment extends Fragment {
     // save all poster paths
     private ArrayList<String> posterPaths = new ArrayList<String>();
     private ArrayList<MovieInfo> movieResults = new ArrayList<MovieInfo>();
+    //private boolean runResume;
     //private ArrayAdapter<String> mMoviesAdapter;
     GridView gridview;
     private FetchMoviesTask task;
@@ -57,7 +61,8 @@ public class MoviesFragment extends Fragment {
     // Update for Settings
     private void updateMovies() {
         SharedPreferences sharedpref = PreferenceManager.getDefaultSharedPreferences(this.getActivity());
-        String sortPref = sharedpref.getString("sort","popular");
+        String sortPref = sharedpref.getString("sort", "popular");
+        //System.out.println("UpdateMovies");
         task = new FetchMoviesTask();
         task.execute(sortPref);
     }
@@ -65,15 +70,19 @@ public class MoviesFragment extends Fragment {
     // Load the movies when app is started
     @Override
     public void onStart() {
-        System.out.println("OnStart");
+        //System.out.println("onStart");
         super.onStart();
         updateMovies();
+
     }
 
     @Override
     public void onResume() {
+        //System.out.println("onResume");
         super.onResume();
-        updateMovies();
+/*        if (runResume)
+            updateMovies();
+        runResume = true;*/
     }
 
     @Override
@@ -91,6 +100,7 @@ public class MoviesFragment extends Fragment {
      * Async Task class to fetch json data from TMDB
      */
     private class FetchMoviesTask extends AsyncTask<String, Void, ArrayList<MovieInfo>> {
+
         private final String LOG_TAG = FetchMoviesTask.class.getSimpleName();
 
         // Do background work to fetch thread. Network threads are done on background
@@ -99,6 +109,7 @@ public class MoviesFragment extends Fragment {
             // Add setting preference. Change doInBackground parameter to string
             // TODO - Add code for network connectivity check
             // HTTP Connection
+            //System.out.println("doInBackground");
             String sortPref = params[0];
             HttpURLConnection urlConnection = null;
             BufferedReader reader = null;
@@ -119,7 +130,7 @@ public class MoviesFragment extends Fragment {
 
                 URL url = new URL(builder.build().toString());
 
-                System.out.println("It's printing " + url);
+                //System.out.println("It's printing " + url);
 
                 urlConnection = (HttpURLConnection) url.openConnection();
 
@@ -181,6 +192,15 @@ public class MoviesFragment extends Fragment {
             //grid.replace(posterPaths);
             gridview.setAdapter(grid);
             grid.notifyDataSetChanged();
+            gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    Intent intent = new Intent(getActivity(), DetailView.class);
+                    intent.putExtra("movie", movieResults.get(position));
+                    startActivity(intent);
+                }
+            });
+            //runResume = false;
         }
     }
 
@@ -202,7 +222,7 @@ public class MoviesFragment extends Fragment {
         JSONArray results = moviesJson.getJSONArray(MDB_RESULT);
 
         // base url for movie poster
-        final String URL_POSTER = "http://image.tmdb.org/t/p/w185";
+        final String URL_POSTER = "http://image.tmdb.org/t/p/w185/";
 
         for (int i = 0; i < results.length(); ++i) {
             String plot;
@@ -216,13 +236,13 @@ public class MoviesFragment extends Fragment {
             plot = movie.getString(MDB_OVERVIEW);
             posterUrl = URL_POSTER + movie.getString(MDB_POSTER);
             posterPaths.add(posterUrl);
-            //System.out.println(posterPaths[i]);
+            //System.out.println(movie.getString(MDB_POSTER));
             title = movie.getString(MDB_TITLE);
             release = movie.getString(MDB_RELEASE);
             rating = movie.getString(MDB_RATING) + "/10";
             // add all the information in one string for parsing later on
-            //MovieInfo info = new MovieInfo(posterUrl, plot, title, release, rating);
-            //movieResults.add(info);
+            MovieInfo info = new MovieInfo(posterUrl, plot, title, release, rating);
+            movieResults.add(info);
             //System.out.println("Movie Results: " + movieResults.get(i));
         }
         return movieResults;

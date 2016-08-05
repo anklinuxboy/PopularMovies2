@@ -13,6 +13,22 @@ public class MovieInfo implements Parcelable {
     private String _release;
     private String _rating;
 
+    public MovieInfo(Parcel in) {
+        _posterPath = in.readString();
+        _plot = in.readString();
+        _title = in.readString();
+        _release = in.readString();
+        _rating = in.readString();
+    }
+
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(getUrl());
+        dest.writeString(getPlot());
+        dest.writeString(getTitle());
+        dest.writeString(getRelease());
+        dest.writeString(getRating());
+    }
+
     //Constructor for class
     public MovieInfo(String url, String plot, String title, String release, String rating) {
         _posterPath = url;
@@ -22,32 +38,9 @@ public class MovieInfo implements Parcelable {
         _rating = rating;
     }
 
-    // Constructor for reading from Parcel.
-    public MovieInfo(Parcel in) {
-        readFromParcel(in);
-    }
-
-    // Reads data from the parcel
-    private void readFromParcel(Parcel in) {
-        _posterPath = in.readString();
-        _plot = in.readString();
-        _title = in.readString();
-        _release = in.readString();
-        _rating = in.readString();
-    }
-
-    // Write to parcel
-    public void writeToParcel(Parcel out, int flags) {
-        out.writeString(getUrl());
-        out.writeString(getPlot());
-        out.writeString(getTitle());
-        out.writeString(getRelease());
-        out.writeString(getRating());
-    }
-
-    // Parcel creator
-    public static final Parcelable.Creator<MovieInfo> CREATOR
-            = new Parcelable.Creator<MovieInfo>() {
+    // Creator
+    public static final Parcelable.Creator CREATOR
+            = new Parcelable.Creator() {
         public MovieInfo createFromParcel(Parcel in) {
             return new MovieInfo(in);
         }
@@ -57,11 +50,10 @@ public class MovieInfo implements Parcelable {
         }
     };
 
-    // Must have method.
+    @Override
     public int describeContents() {
         return 0;
     }
-
     // Getter methods
     public String getUrl() {
         return _posterPath;
@@ -82,6 +74,4 @@ public class MovieInfo implements Parcelable {
     public String getRating() {
         return _rating;
     }
-
-
 }
