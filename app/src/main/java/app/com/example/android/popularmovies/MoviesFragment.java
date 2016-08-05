@@ -76,10 +76,8 @@ public class MoviesFragment extends Fragment {
 
     @Override
     public void onStart() {
-        if (isNetworkAvailable()) {
-            super.onStart();
-            updateMovies();
-        }
+        super.onStart();
+        updateMovies();
     }
 
     @Override
