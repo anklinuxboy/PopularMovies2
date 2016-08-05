@@ -8,24 +8,20 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Parcel;
-import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.GridView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,14 +34,14 @@ import java.util.ArrayList;
  * A placeholder fragment containing a simple view.
  */
 public class MoviesFragment extends Fragment {
-    // save all poster paths
+
+    // Save the poster HTTP Paths and the movie results
     private ArrayList<String> posterPaths = new ArrayList<String>();
     private ArrayList<MovieInfo> movieResults = new ArrayList<MovieInfo>();
-    //private boolean runResume;
-    //private ArrayAdapter<String> mMoviesAdapter;
     GridView gridview;
     private FetchMoviesTask task;
     GridViewAdapter grid;
+
     public MoviesFragment() {
     }
 
@@ -54,37 +50,44 @@ public class MoviesFragment extends Fragment {
                              Bundle savedInstanceState) {
         setHasOptionsMenu(true);
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+
+        // Prevents the app from crashing if network not available
+        if (!isNetworkAvailable()) {
+            Context context = getContext();
+            CharSequence text = "Network Not Available!";
+            int duration = Toast.LENGTH_SHORT;
+            Toast toast = Toast.makeText(context, text, duration);
+            toast.show();
+        }
         gridview = (GridView) rootView.findViewById(R.id.gridView);
         return rootView;
     }
 
-    // Update for Settings
+
     private void updateMovies() {
-        SharedPreferences sharedpref = PreferenceManager.getDefaultSharedPreferences(this.getActivity());
+        SharedPreferences sharedpref = PreferenceManager
+                                            .getDefaultSharedPreferences(this.getActivity());
+
+        // Get the Preference settings Popular is default setting
         String sortPref = sharedpref.getString("sort", "popular");
-        //System.out.println("UpdateMovies");
         task = new FetchMoviesTask();
         task.execute(sortPref);
     }
 
-    // Load the movies when app is started
     @Override
     public void onStart() {
-        //System.out.println("onStart");
-        super.onStart();
-        updateMovies();
-
+        if (isNetworkAvailable()) {
+            super.onStart();
+            updateMovies();
+        }
     }
 
     @Override
     public void onResume() {
-        //System.out.println("onResume");
         super.onResume();
-/*        if (runResume)
-            updateMovies();
-        runResume = true;*/
     }
 
+    // If user pauses, delete all the previous data because new data will be loaded in onStart
     @Override
     public void onPause() {
         super.onPause();
@@ -106,15 +109,11 @@ public class MoviesFragment extends Fragment {
         // Do background work to fetch thread. Network threads are done on background
         @Override
         protected ArrayList<MovieInfo> doInBackground(String... params) {
-            // Add setting preference. Change doInBackground parameter to string
-            // TODO - Add code for network connectivity check
-            // HTTP Connection
-            //System.out.println("doInBackground");
+
             String sortPref = params[0];
             HttpURLConnection urlConnection = null;
             BufferedReader reader = null;
 
-            // String to contain raw JSON output
             String moviesJSONRaw = null;
 
             // try to open internet connection. Catch IOException.
@@ -129,8 +128,6 @@ public class MoviesFragment extends Fragment {
                         .appendQueryParameter("api_key", BuildConfig.OPEN_TMDB_API_KEY);
 
                 URL url = new URL(builder.build().toString());
-
-                //System.out.println("It's printing " + url);
 
                 urlConnection = (HttpURLConnection) url.openConnection();
 
@@ -187,11 +184,11 @@ public class MoviesFragment extends Fragment {
         @TargetApi(11)
         @Override
         protected void onPostExecute(ArrayList<MovieInfo> results) {
-            //System.out.println("In OnPostExecute");
             grid = new GridViewAdapter(getActivity(), R.layout.fragment_grid, R.id.movie_image, posterPaths);
-            //grid.replace(posterPaths);
             gridview.setAdapter(grid);
             grid.notifyDataSetChanged();
+
+            // Implements the onClick listener. The position is the movie index
             gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -200,14 +197,10 @@ public class MoviesFragment extends Fragment {
                     startActivity(intent);
                 }
             });
-            //runResume = false;
         }
     }
 
-    // Does not override method from superclass
-
-
-    // return strings of movie data
+    // Return strings of movie data
     private ArrayList<MovieInfo> getMovieDataJson(String moviesJSONRaw) throws JSONException {
         // JSON objects that need to be extracted
         final String MDB_RESULT = "results";
@@ -218,7 +211,6 @@ public class MoviesFragment extends Fragment {
         final String MDB_RATING = "vote_average";
 
         JSONObject moviesJson = new JSONObject(moviesJSONRaw);
-        // save the movie results in a JSONArray
         JSONArray results = moviesJson.getJSONArray(MDB_RESULT);
 
         // base url for movie poster
@@ -236,15 +228,22 @@ public class MoviesFragment extends Fragment {
             plot = movie.getString(MDB_OVERVIEW);
             posterUrl = URL_POSTER + movie.getString(MDB_POSTER);
             posterPaths.add(posterUrl);
-            //System.out.println(movie.getString(MDB_POSTER));
             title = movie.getString(MDB_TITLE);
             release = movie.getString(MDB_RELEASE);
             rating = movie.getString(MDB_RATING) + "/10";
             // add all the information in one string for parsing later on
             MovieInfo info = new MovieInfo(posterUrl, plot, title, release, rating);
             movieResults.add(info);
-            //System.out.println("Movie Results: " + movieResults.get(i));
         }
         return movieResults;
     }
+
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    }
 }
+
+

@@ -40,12 +40,9 @@ public class GridViewAdapter extends ArrayAdapter {
         } else {
             imageView = (ImageView) convertView.findViewById(R.id.movie_image);
         }
-        //System.out.println("in getView adapter");
-        //Log.i("Values", urls[position]);
+
         Picasso.with(context)
                 .load(movieurls.get(position))
-                .fit()
-                .centerCrop()
                 .into(imageView);
 
         return convertView;

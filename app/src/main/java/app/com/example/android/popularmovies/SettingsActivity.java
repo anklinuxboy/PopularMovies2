@@ -1,12 +1,9 @@
 package app.com.example.android.popularmovies;
 
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.os.Bundle;
-import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
-import android.preference.PreferenceManager;
 
 /**
  * Created by ankit on 8/4/16.
