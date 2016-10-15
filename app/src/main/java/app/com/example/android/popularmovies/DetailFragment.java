@@ -77,8 +77,9 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     };
 
     private static final String LOG_TAG = DetailFragment.class.getSimpleName();
-
-    private String mMovieStr;
+    static final String DETAIL_URI = "URI";
+    static final String NETWORK_KEY = "isNetwork";
+    private Uri movieUri;
     private boolean isNetwork = false;
     private List<String> trailerTitles;
     private List<String> movieReviews;
@@ -91,8 +92,13 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         setHasOptionsMenu(true);
+        Bundle arguments = getArguments();
+        if (arguments != null) {
+            movieUri = arguments.getParcelable(DETAIL_URI);
+            isNetwork = arguments.getBoolean(NETWORK_KEY);
+        }
         View rootView = inflater.inflate(R.layout.fragment_detail, container, false);
-        Toolbar toolbar = (Toolbar) rootView.findViewById(R.id.toolbar);
+        Toolbar toolbar = (Toolbar) rootView.findViewById(R.id.toolbar_detail);
 
         //for crate home button
         AppCompatActivity activity = (AppCompatActivity) getActivity();
@@ -100,21 +106,26 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         activity.getSupportActionBar().setDisplayShowTitleEnabled(false);
         activity.getSupportActionBar().setDisplayHomeAsUpEnabled(false);
         // The detail Activity called via intent.
-        Intent intent = getActivity().getIntent();
-        if (intent == null || intent.getData() == null) {
-            return null;
-        }
+//        Intent intent = getActivity().getIntent();
+//        if (intent == null || intent.getData() == null) {
+//            return null;
+//        }
+//
+//        if (intent != null) {
+//            mMovieStr = intent.getDataString();
+//            isNetwork = intent.getExtras().getBoolean(NETWORK_KEY);
+//        }
 
-        if (intent != null) {
-            mMovieStr = intent.getDataString();
-            isNetwork = intent.getExtras().getBoolean("isNetwork");
-        }
 
         listViewReviews = (ListView) rootView.findViewById(R.id.review_list_view);
         trailerList = (ListView) rootView.findViewById(R.id.trailer_list_view);
         getLoaderManager().initLoader(DETAIL_LOADER_ID, null, this);
 
         return rootView;
+    }
+
+    public void onSettingChanged() {
+        getLoaderManager().restartLoader(DETAIL_LOADER_ID, null, this);
     }
 
     @Override
@@ -140,17 +151,18 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        Uri movieUri = Uri.parse(mMovieStr);
-        String movieID = movieUri.getLastPathSegment();
-        //Log.d(LOG_TAG, "last path segment " + movieID);
-        Uri newMovieUri = MovieContract.MovieEntry.buildUriWithId(Long.parseLong(movieID));
-        //Log.d(LOG_TAG, "movie uri " + movieUri);
-        return new CursorLoader(getActivity(),
-                newMovieUri,
-                MOVIE_PROJECTION_COLUMNS,
-                null,
-                null,
-                null);
+        if (movieUri != null) {
+            String movieID = movieUri.getLastPathSegment();
+            Uri newMovieUri = MovieContract.MovieEntry.buildUriWithId(Long.parseLong(movieID));
+            //Log.d(LOG_TAG, "movie uri " + movieUri);
+            return new CursorLoader(getActivity(),
+                    newMovieUri,
+                    MOVIE_PROJECTION_COLUMNS,
+                    null,
+                    null,
+                    null);
+        }
+        return null;
     }
 
     @Override
@@ -166,6 +178,10 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             TextView title = (TextView) getView().findViewById(R.id.title1);
 
             CheckBox checkBox = (CheckBox) getView().findViewById(R.id.star);
+            ImageView emptyView = (ImageView) getView().findViewById(R.id.empty_view);
+            emptyView.setVisibility(View.VISIBLE);
+
+            checkBox.setVisibility(View.VISIBLE);
 
             checkBox.setChecked(cursor.getString(MoviesFragment.COL_MOVIE_FAV).equals("1"));
 
@@ -201,6 +217,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
             Picasso.with(getContext())
                     .load(cursor.getString(MoviesFragment.COL_MOVIE_URL))
+                    .placeholder(new CustomTextDrawable(cursor.getString(MoviesFragment.COL_MOVIE_TITLE)))
                     .fit()
                     .into(imageView);
 
@@ -304,7 +321,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             trailerList.setAdapter(trailerAdapter);
             Utility.setListViewHeightBasedOnItems(trailerList);
             loadFinished = true;
-            if (actionProvider != null) {
+            if (null != actionProvider && trailerTitles.size() != 0) {
                 actionProvider.setShareIntent(createShareIntent());
             }
             trailerList.setOnItemClickListener(new AdapterView.OnItemClickListener() {

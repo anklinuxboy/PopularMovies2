@@ -44,6 +44,7 @@ public class GridViewAdapter extends CursorAdapter {
 
         Picasso.with(context)
                 .load(getPosterUrlFromCursor(cursor))
+                .placeholder(new CustomTextDrawable(cursor.getString(MoviesFragment.COL_MOVIE_TITLE)))
                 .into(imageView);
     }
 }

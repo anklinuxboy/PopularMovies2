@@ -22,6 +22,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import org.json.JSONArray;
@@ -44,10 +45,11 @@ import app.com.example.android.popularmovies.data.MovieDBHelper;
 public class MoviesFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
     private final String LOG_TAG = MoviesFragment.class.getSimpleName();
-
+    private int listPosition = ListView.INVALID_POSITION;
+    private static final String SELECTED_KEY = "selected_position";
     // Save the poster HTTP Paths and the movie results
     private GridViewAdapter mAdapter;
-
+    private GridView gridview;
     private static final String[] MOVIE_PROJECTION_COLUMNS = {
             MovieContract.MovieEntry._ID,
             MovieContract.MovieEntry.COLUMN_MOVIE_ID,
@@ -76,10 +78,25 @@ public class MoviesFragment extends Fragment implements LoaderManager.LoaderCall
     public MoviesFragment() {
     }
 
+    public interface Callback {
+        public void onItemSelected(Uri uri, boolean networkAvailable);
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getLoaderManager().initLoader(LOADER_ID, null, this);
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        // When tablets rotate, the currently selected list item needs to be saved.
+        // When no item is selected, mPosition will be set to Listview.INVALID_POSITION,
+        // so check for that before storing.
+        if (listPosition != ListView.INVALID_POSITION) {
+            outState.putInt(SELECTED_KEY, listPosition);
+        }
+        super.onSaveInstanceState(outState);
     }
 
     @Override
@@ -103,7 +120,17 @@ public class MoviesFragment extends Fragment implements LoaderManager.LoaderCall
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
         //Log.d(LOG_TAG, "onLoadFinished");
-        mAdapter.swapCursor(cursor);
+        if (cursor == null) {
+            if (isNetworkAvailable()) {
+
+            }
+        } else {
+            mAdapter.swapCursor(cursor);
+            if (listPosition != ListView.INVALID_POSITION) {
+                gridview.smoothScrollToPosition(listPosition);
+            }
+        }
+
     }
 
     @Override
@@ -127,7 +154,7 @@ public class MoviesFragment extends Fragment implements LoaderManager.LoaderCall
             Toast toast = Toast.makeText(context, text, duration);
             toast.show();
         }
-        GridView gridview = (GridView) rootView.findViewById(R.id.gridView);
+        gridview = (GridView) rootView.findViewById(R.id.gridView);
         gridview.setAdapter(mAdapter);
 
         gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -141,13 +168,23 @@ public class MoviesFragment extends Fragment implements LoaderManager.LoaderCall
                     }
                     //Log.d(LOG_TAG, "movie ID " + cursor.getLong(COL_MOVIE_ID));
                     String sortSetting = Utility.getPreferredSortSetting(getContext());
-                    Intent intent = new Intent(getActivity(), DetailView.class)
-                            .setData(MovieContract.MovieEntry.buildUriWithId(cursor.getLong(COL_ID)));
-                    intent.putExtra("isNetwork", isNetworkAvailable());
-                    startActivity(intent);
+                    ((Callback) getActivity())
+                            .onItemSelected(MovieContract.MovieEntry.buildUriWithId(cursor.getLong(COL_ID)), isNetworkAvailable());
+//                    Intent intent = new Intent(getActivity(), DetailView.class)
+//                            .setData(MovieContract.MovieEntry.buildUriWithId(cursor.getLong(COL_ID)));
+//                    intent.putExtra("isNetwork", isNetworkAvailable());
+//                    startActivity(intent);
                 }
+                listPosition = position;
             }
         });
+
+        if (savedInstanceState != null && savedInstanceState.containsKey(SELECTED_KEY)) {
+            // The listview probably hasn't even been populated yet.  Actually perform the
+            // swapout in onLoadFinished.
+            listPosition = savedInstanceState.getInt(SELECTED_KEY);
+        }
+
         return rootView;
     }
 

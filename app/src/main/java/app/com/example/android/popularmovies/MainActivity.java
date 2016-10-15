@@ -2,7 +2,9 @@
 package app.com.example.android.popularmovies;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.DeadObjectException;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -14,10 +16,9 @@ import android.view.MenuItem;
 
 import timber.log.Timber;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements MoviesFragment.Callback {
 
-    private String mSetting;
-    private final String MOVIEFRAGMENTTAG = "MFTAG";
+    private String movieSetting;
     private final String DETAILFRAGMENTTAG = "DFTAG";
     private boolean twoPane;
 
@@ -25,8 +26,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        movieSetting = Utility.getPreferredSortSetting(this);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        this.setSupportActionBar(toolbar);
         if (findViewById(R.id.detailview) != null) {
             twoPane = true;
             getSupportFragmentManager().beginTransaction()
@@ -45,6 +47,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        String setting = Utility.getPreferredSortSetting(this);
+        Timber.d(setting);
+        if (setting != null && !setting.equals(movieSetting)) {
+            DetailFragment df = (DetailFragment) getSupportFragmentManager().findFragmentByTag(DETAILFRAGMENTTAG);
+            if (df != null) {
+                df.onSettingChanged();
+            }
+        }
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
@@ -58,5 +73,25 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onItemSelected(Uri uri, boolean networkAvailable) {
+        if (twoPane) {
+            Bundle args = new Bundle();
+            args.putParcelable(DetailFragment.DETAIL_URI, uri);
+            args.putBoolean(DetailFragment.NETWORK_KEY, networkAvailable);
+
+            DetailFragment fragment = new DetailFragment();
+            fragment.setArguments(args);
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.detailview, fragment, DETAILFRAGMENTTAG)
+                    .commit();
+        } else {
+            Intent intent = new Intent(this, DetailView.class)
+                    .setData(uri);
+            intent.putExtra(DetailFragment.NETWORK_KEY, networkAvailable);
+            startActivity(intent);
+        }
     }
 }
