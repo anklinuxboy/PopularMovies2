@@ -12,6 +12,7 @@ public class MovieInfo implements Parcelable {
     private String _title;
     private String _release;
     private String _rating;
+    private String _id;
 
     public MovieInfo(Parcel in) {
         _posterPath = in.readString();
@@ -19,6 +20,7 @@ public class MovieInfo implements Parcelable {
         _title = in.readString();
         _release = in.readString();
         _rating = in.readString();
+        _id = in.readString();
     }
 
     public void writeToParcel(Parcel dest, int flags) {
@@ -27,15 +29,17 @@ public class MovieInfo implements Parcelable {
         dest.writeString(getTitle());
         dest.writeString(getRelease());
         dest.writeString(getRating());
+        dest.writeString(getId());
     }
 
     //Constructor for class
-    public MovieInfo(String url, String plot, String title, String release, String rating) {
+    public MovieInfo(String url, String plot, String title, String release, String rating, String id) {
         _posterPath = url;
         _plot = plot;
         _title = title;
         _release = release;
         _rating = rating;
+        _id = id;
     }
 
     // Creator
@@ -73,5 +77,9 @@ public class MovieInfo implements Parcelable {
 
     public String getRating() {
         return _rating;
+    }
+
+    public String getId() {
+        return _id;
     }
 }

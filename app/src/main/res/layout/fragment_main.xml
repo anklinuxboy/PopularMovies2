@@ -9,6 +9,7 @@
     android:horizontalSpacing="10dp"
     android:stretchMode="columnWidth"
     android:gravity="center"
+    android:adjustViewBounds="true"
     tools:context="app.com.example.android.popularmovies.MoviesFragment"
     tools:showIn="@layout/activity_main">
 
