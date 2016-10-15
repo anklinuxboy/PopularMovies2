@@ -1,9 +1,9 @@
 # PopularMovies
 This is the Second Project of the Android Nanodegree by Google and Udacity.
 
-Technologies Used - 
-Picasso for loading images
-Parcelable for data serialization
+Features - 
+Custom Drawables to display movie title when no connectivity
+SQLite Database to store movie info and display when no connectivity
 
 Add your TMDB key in the gradle.properties file in the Project folder
 
