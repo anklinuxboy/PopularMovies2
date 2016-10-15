@@ -4,5 +4,8 @@
     <string name="sort_by">Sort By</string>
     <string name="popularity">Popularity</string>
     <string name="highest_rating">Highest Rating</string>
+    <string name = "favorites">Favorite</string>
     <string name="title_settings">SettingsActivity</string>
+    <string name="trailer">Play Trailer</string>
+    <string name="share">Share</string>
 </resources>

@@ -4,6 +4,7 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -11,12 +12,17 @@ import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import org.json.JSONArray;
@@ -30,24 +36,113 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 
+import app.com.example.android.popularmovies.data.MovieContract;
+import app.com.example.android.popularmovies.data.MovieDBHelper;
+
 /**
  * A placeholder fragment containing a simple view.
  */
-public class MoviesFragment extends Fragment {
+public class MoviesFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
+    private final String LOG_TAG = MoviesFragment.class.getSimpleName();
+    private int listPosition = ListView.INVALID_POSITION;
+    private static final String SELECTED_KEY = "selected_position";
     // Save the poster HTTP Paths and the movie results
-    private ArrayList<String> posterPaths = new ArrayList<String>();
-    private ArrayList<MovieInfo> movieResults = new ArrayList<MovieInfo>();
-    GridView gridview;
-    private FetchMoviesTask task;
-    GridViewAdapter grid;
+    private GridViewAdapter mAdapter;
+    private GridView gridview;
+    private static final String[] MOVIE_PROJECTION_COLUMNS = {
+            MovieContract.MovieEntry._ID,
+            MovieContract.MovieEntry.COLUMN_MOVIE_ID,
+            MovieContract.MovieEntry.COLUMN_TITLE,
+            MovieContract.MovieEntry.COLUMN_YEAR,
+            MovieContract.MovieEntry.COLUMN_RATING,
+            MovieContract.MovieEntry.COLUMN_SYNOPSIS,
+            MovieContract.MovieEntry.COLUMN_FAVORITE,
+            MovieContract.MovieEntry.COLUMN_SORT_SETTING,
+            MovieContract.MovieEntry.COLUMN_IMAGE_URL
+
+    };
+
+    static final int COL_ID = 0;
+    static final int COL_MOVIE_ID = 1;
+    static final int COL_MOVIE_TITLE = 2;
+    static final int COL_MOVIE_YEAR = 3;
+    static final int COL_MOVIE_RATING = 4;
+    static final int COL_MOVIE_SYNOPSIS = 5;
+    static final int COL_MOVIE_FAV = 6;
+    static final int COL_MOVIE_SORT = 7;
+    static final int COL_MOVIE_URL = 8;
+
+    private int LOADER_ID = 0;
 
     public MoviesFragment() {
+    }
+
+    public interface Callback {
+        public void onItemSelected(Uri uri, boolean networkAvailable);
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        getLoaderManager().initLoader(LOADER_ID, null, this);
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        // When tablets rotate, the currently selected list item needs to be saved.
+        // When no item is selected, mPosition will be set to Listview.INVALID_POSITION,
+        // so check for that before storing.
+        if (listPosition != ListView.INVALID_POSITION) {
+            outState.putInt(SELECTED_KEY, listPosition);
+        }
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        //Log.d(LOG_TAG, "Inside onCreateLoader");
+        String sortPref = Utility.getPreferredSortSetting(getContext());
+
+        String sort = MovieContract.MovieEntry.COLUMN_TITLE + " DESC";
+        Uri movieUri = MovieContract.MovieEntry.buildUriWithSortSetting(sortPref);
+
+        CursorLoader cursorLoader = new CursorLoader(getActivity(),
+                                    movieUri,
+                                    MOVIE_PROJECTION_COLUMNS,
+                                    null,
+                                    null,
+                                    sort);
+
+        return cursorLoader;
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+        //Log.d(LOG_TAG, "onLoadFinished");
+        if (cursor == null) {
+            if (isNetworkAvailable()) {
+
+            }
+        } else {
+            mAdapter.swapCursor(cursor);
+            if (listPosition != ListView.INVALID_POSITION) {
+                gridview.smoothScrollToPosition(listPosition);
+            }
+        }
+
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        //Log.d(LOG_TAG, "onLoadReset");
+        mAdapter.swapCursor(null);
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        mAdapter = new GridViewAdapter(getContext(), null, 0);
         setHasOptionsMenu(true);
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
@@ -60,183 +155,63 @@ public class MoviesFragment extends Fragment {
             toast.show();
         }
         gridview = (GridView) rootView.findViewById(R.id.gridView);
+        gridview.setAdapter(mAdapter);
+
+        gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView adapterView, View view, int position, long l) {
+                Cursor cursor = (Cursor) adapterView.getItemAtPosition(position);
+                if (cursor != null) {
+                    cursor.moveToFirst();
+                    for (int i = 0; i < position; ++i) {
+                        cursor.moveToNext();
+                    }
+                    //Log.d(LOG_TAG, "movie ID " + cursor.getLong(COL_MOVIE_ID));
+                    String sortSetting = Utility.getPreferredSortSetting(getContext());
+                    ((Callback) getActivity())
+                            .onItemSelected(MovieContract.MovieEntry.buildUriWithId(cursor.getLong(COL_ID)), isNetworkAvailable());
+//                    Intent intent = new Intent(getActivity(), DetailView.class)
+//                            .setData(MovieContract.MovieEntry.buildUriWithId(cursor.getLong(COL_ID)));
+//                    intent.putExtra("isNetwork", isNetworkAvailable());
+//                    startActivity(intent);
+                }
+                listPosition = position;
+            }
+        });
+
+        if (savedInstanceState != null && savedInstanceState.containsKey(SELECTED_KEY)) {
+            // The listview probably hasn't even been populated yet.  Actually perform the
+            // swapout in onLoadFinished.
+            listPosition = savedInstanceState.getInt(SELECTED_KEY);
+        }
+
         return rootView;
     }
 
 
     private void updateMovies() {
-        SharedPreferences sharedpref = PreferenceManager
-                                            .getDefaultSharedPreferences(this.getActivity());
-
         // Get the Preference settings Popular is default setting
-        String sortPref = sharedpref.getString("sort", "popular");
-        task = new FetchMoviesTask();
-        task.execute(sortPref);
+        String sortPref = Utility.getPreferredSortSetting(getContext());
+        if (!sortPref.equals("favorite")) {
+            FetchMoviesTask task = new FetchMoviesTask(getContext());
+            task.execute(sortPref);
+        }
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        updateMovies();
     }
 
     @Override
     public void onResume() {
         super.onResume();
+        if (isNetworkAvailable())
+            updateMovies();
+        getLoaderManager().restartLoader(LOADER_ID, null, this);
     }
 
-    // If user pauses, delete all the previous data because new data will be loaded in onStart
-    @Override
-    public void onPause() {
-        super.onPause();
-        if (posterPaths != null)
-            posterPaths.clear();
-        if (movieResults != null)
-            movieResults.clear();
-        if (grid != null)
-            grid.clear();
-    }
-
-    /*
-     * Async Task class to fetch json data from TMDB
-     */
-    private class FetchMoviesTask extends AsyncTask<String, Void, ArrayList<MovieInfo>> {
-
-        private final String LOG_TAG = FetchMoviesTask.class.getSimpleName();
-
-        // Do background work to fetch thread. Network threads are done on background
-        @Override
-        protected ArrayList<MovieInfo> doInBackground(String... params) {
-
-            String sortPref = params[0];
-            HttpURLConnection urlConnection = null;
-            BufferedReader reader = null;
-
-            String moviesJSONRaw = null;
-
-            // try to open internet connection. Catch IOException.
-            try {
-                // Build the URI for TMDB
-                Uri.Builder builder = new Uri.Builder();
-                builder.scheme("http")
-                        .authority("api.themoviedb.org")
-                        .appendPath("3")
-                        .appendPath("movie")
-                        .appendPath(sortPref)  //  Popular setting
-                        .appendQueryParameter("api_key", BuildConfig.OPEN_TMDB_API_KEY);
-
-                URL url = new URL(builder.build().toString());
-
-                urlConnection = (HttpURLConnection) url.openConnection();
-
-                // set the method of request and connect
-                urlConnection.setRequestMethod("GET");
-                urlConnection.setDoInput(true);
-                urlConnection.setDoOutput(true);
-
-                urlConnection.connect();
-
-                // Read input stream into a string
-                InputStream inputStream = urlConnection.getInputStream();
-
-                StringBuffer buffer = new StringBuffer();
-                if (inputStream == null)
-                    return null;
-
-                reader = new BufferedReader(new InputStreamReader(inputStream));
-
-                String line;
-                while ((line = reader.readLine()) != null)
-                    buffer.append(line + "\n");
-
-                if (buffer.length() == 0)
-                    return null;
-
-                moviesJSONRaw = buffer.toString();
-
-            } catch (IOException e) {
-                Log.e(LOG_TAG, "Error", e);
-                return null;
-            } finally {
-                // close the connection and reader.
-                if (urlConnection != null)
-                    urlConnection.disconnect();
-
-                if (reader != null) {
-                    try {
-                        reader.close();
-                    } catch (final IOException e) {
-                        Log.e(LOG_TAG, "Error Closing Stream", e);
-                    }
-                }
-            }
-
-            try {
-                return getMovieDataJson(moviesJSONRaw);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
-
-        @TargetApi(11)
-        @Override
-        protected void onPostExecute(ArrayList<MovieInfo> results) {
-            grid = new GridViewAdapter(getActivity(), R.layout.fragment_grid, R.id.movie_image, posterPaths);
-            gridview.setAdapter(grid);
-            grid.notifyDataSetChanged();
-
-            // Implements the onClick listener. The position is the movie index
-            gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    Intent intent = new Intent(getActivity(), DetailView.class);
-                    intent.putExtra("movie", movieResults.get(position));
-                    startActivity(intent);
-                }
-            });
-        }
-    }
-
-    // Return strings of movie data
-    private ArrayList<MovieInfo> getMovieDataJson(String moviesJSONRaw) throws JSONException {
-        // JSON objects that need to be extracted
-        final String MDB_RESULT = "results";
-        final String MDB_POSTER = "poster_path";
-        final String MDB_OVERVIEW = "overview";
-        final String MDB_TITLE = "title";
-        final String MDB_RELEASE = "release_date";
-        final String MDB_RATING = "vote_average";
-
-        JSONObject moviesJson = new JSONObject(moviesJSONRaw);
-        JSONArray results = moviesJson.getJSONArray(MDB_RESULT);
-
-        // base url for movie poster
-        final String URL_POSTER = "http://image.tmdb.org/t/p/w185/";
-
-        for (int i = 0; i < results.length(); ++i) {
-            String plot;
-            String title;
-            String release;
-            String rating;
-            String posterUrl;
-
-            // extract all the relevant information from the object
-            JSONObject movie = results.getJSONObject(i);
-            plot = movie.getString(MDB_OVERVIEW);
-            posterUrl = URL_POSTER + movie.getString(MDB_POSTER);
-            posterPaths.add(posterUrl);
-            title = movie.getString(MDB_TITLE);
-            release = movie.getString(MDB_RELEASE);
-            rating = movie.getString(MDB_RATING) + "/10";
-            // add all the information in one string for parsing later on
-            MovieInfo info = new MovieInfo(posterUrl, plot, title, release, rating);
-            movieResults.add(info);
-        }
-        return movieResults;
-    }
-
-    private boolean isNetworkAvailable() {
+    public boolean isNetworkAvailable() {
         ConnectivityManager connectivityManager
                 = (ConnectivityManager) getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();

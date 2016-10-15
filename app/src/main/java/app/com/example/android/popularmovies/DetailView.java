@@ -1,48 +1,33 @@
 package app.com.example.android.popularmovies;
 
 
-import android.content.Intent;
-import android.graphics.Color;
+
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.widget.ImageView;
-import android.widget.TextView;
-import com.squareup.picasso.Picasso;
 
 /**
  * Created by ankit on 8/5/16.
  */
 public class DetailView extends AppCompatActivity {
 
+    private final String LOG_TAG = DetailView.class.getSimpleName();
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detailview);
+        if (savedInstanceState == null) {
 
-        // Get the Parcelable intent
-        Intent intent = getIntent();
-        MovieInfo movie = intent.getExtras().getParcelable("movie");
+            Bundle arguments = new Bundle();
+            arguments.putParcelable(DetailFragment.DETAIL_URI, getIntent().getData());
+            arguments.putBoolean(DetailFragment.NETWORK_KEY, getIntent().getBooleanExtra(DetailFragment.NETWORK_KEY, false));
 
-        TextView rating = (TextView) findViewById(R.id.rating);
-        TextView release = (TextView) findViewById(R.id.release);
-        TextView plot = (TextView) findViewById(R.id.plot);
-        ImageView imageView = (ImageView) findViewById(R.id.poster);
-        TextView title = (TextView) findViewById(R.id.title1);
+            DetailFragment fragment = new DetailFragment();
+            fragment.setArguments(arguments);
 
-        title.setTextColor(Color.WHITE);
-        title.setText(movie.getTitle());
-
-        release.setText(movie.getRelease());
-
-        rating.setText(movie.getRating());
-
-        plot.setText(movie.getPlot());
-
-        String url = movie.getUrl();
-
-        Picasso.with(getApplicationContext())
-                .load(url)
-                .fit()
-                .into(imageView);
+            getSupportFragmentManager().beginTransaction()
+                    .add(R.id.detailview, fragment)
+                    .commit();
+        }
     }
 }

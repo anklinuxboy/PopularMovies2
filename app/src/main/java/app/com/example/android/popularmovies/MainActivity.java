@@ -2,32 +2,41 @@
 package app.com.example.android.popularmovies;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.DeadObjectException;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
-public class MainActivity extends AppCompatActivity {
+import timber.log.Timber;
+
+public class MainActivity extends AppCompatActivity implements MoviesFragment.Callback {
+
+    private String movieSetting;
+    private final String DETAILFRAGMENTTAG = "DFTAG";
+    private boolean twoPane;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        movieSetting = Utility.getPreferredSortSetting(this);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+        this.setSupportActionBar(toolbar);
+        if (findViewById(R.id.detailview) != null) {
+            twoPane = true;
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.detailview, new DetailFragment(), DETAILFRAGMENTTAG)
+                    .commit();
+        }  else {
+            twoPane = false;
+        }
     }
 
     @Override
@@ -35,6 +44,19 @@ public class MainActivity extends AppCompatActivity {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        String setting = Utility.getPreferredSortSetting(this);
+        Timber.d(setting);
+        if (setting != null && !setting.equals(movieSetting)) {
+            DetailFragment df = (DetailFragment) getSupportFragmentManager().findFragmentByTag(DETAILFRAGMENTTAG);
+            if (df != null) {
+                df.onSettingChanged();
+            }
+        }
     }
 
     @Override
@@ -51,5 +73,25 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onItemSelected(Uri uri, boolean networkAvailable) {
+        if (twoPane) {
+            Bundle args = new Bundle();
+            args.putParcelable(DetailFragment.DETAIL_URI, uri);
+            args.putBoolean(DetailFragment.NETWORK_KEY, networkAvailable);
+
+            DetailFragment fragment = new DetailFragment();
+            fragment.setArguments(args);
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.detailview, fragment, DETAILFRAGMENTTAG)
+                    .commit();
+        } else {
+            Intent intent = new Intent(this, DetailView.class)
+                    .setData(uri);
+            intent.putExtra(DetailFragment.NETWORK_KEY, networkAvailable);
+            startActivity(intent);
+        }
     }
 }
