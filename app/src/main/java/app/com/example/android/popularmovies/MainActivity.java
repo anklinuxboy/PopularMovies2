@@ -1,18 +1,16 @@
 // TODO - remove api key from gradle.properties before uploading to git
 package app.com.example.android.popularmovies;
 
+import android.app.ActivityOptions;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.DeadObjectException;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ImageView;
 
 import timber.log.Timber;
 
@@ -76,7 +74,7 @@ public class MainActivity extends AppCompatActivity implements MoviesFragment.Ca
     }
 
     @Override
-    public void onItemSelected(Uri uri, boolean networkAvailable) {
+    public void onItemSelected(Uri uri, boolean networkAvailable, ImageView poster) {
         if (twoPane) {
             Bundle args = new Bundle();
             args.putParcelable(DetailFragment.DETAIL_URI, uri);
@@ -91,7 +89,12 @@ public class MainActivity extends AppCompatActivity implements MoviesFragment.Ca
             Intent intent = new Intent(this, DetailView.class)
                     .setData(uri);
             intent.putExtra(DetailFragment.NETWORK_KEY, networkAvailable);
-            startActivity(intent);
+            Bundle bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(
+                    this,
+                    poster,
+                    poster.getTransitionName())
+                    .toBundle();
+            startActivity(intent, bundle);
         }
     }
 }

@@ -7,6 +7,7 @@
         android:layout_height="250dp"
         android:scaleType="fitXY"
         android:adjustViewBounds="true"
+        android:transitionName="@string/poster_transition"
         android:id="@+id/movie_image"/>
 
 </FrameLayout>
