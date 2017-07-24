@@ -3,11 +3,11 @@ apply plugin: 'android-apt'
 
 android {
     compileSdkVersion 23
-    buildToolsVersion "23.0.2"
+    buildToolsVersion '25.0.0'
 
     defaultConfig {
         applicationId "app.com.example.android.popularmovies"
-        minSdkVersion 10
+        minSdkVersion 21
         targetSdkVersion 23
         versionCode 1
         versionName "1.0"

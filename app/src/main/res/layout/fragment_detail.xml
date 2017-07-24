@@ -30,6 +30,7 @@
                     android:layout_marginLeft="5sp"
                     android:layout_marginStart="5sp"
                     android:scaleType="center"
+                    android:transitionName="@string/poster_transition"
                     android:id="@+id/poster"/>
 
                 <TextView
