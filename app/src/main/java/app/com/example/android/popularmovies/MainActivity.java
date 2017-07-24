@@ -1,7 +1,6 @@
 // TODO - remove api key from gradle.properties before uploading to git
 package app.com.example.android.popularmovies;
 
-import android.app.ActivityOptions;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -35,6 +34,18 @@ public class MainActivity extends AppCompatActivity implements MoviesFragment.Ca
         }  else {
             twoPane = false;
         }
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.action_settings)
+        {
+            startActivity(new Intent(this, SettingsActivity.class));
+            return true;
+        }
+        return super.onContextItemSelected(item);
+
     }
 
     @Override

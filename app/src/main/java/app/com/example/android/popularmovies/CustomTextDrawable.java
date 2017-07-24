@@ -19,10 +19,6 @@ public class CustomTextDrawable extends Drawable {
         this.paint = new Paint();
         paint.setColor(Color.BLACK);
         paint.setTextSize(14f);
-//        paint.setAntiAlias(true);
-//        paint.setFakeBoldText(true);
-//        paint.setShadowLayer(6f, 0, 0, Color.BLACK);
-//        paint.setStyle(Paint.Style.FILL);
         paint.setTextAlign(Paint.Align.CENTER);
     }
 
