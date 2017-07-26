@@ -1,34 +1,42 @@
 package app.com.example.android.popularmovies.views;
 
+import android.arch.lifecycle.LifecycleFragment;
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import app.com.example.android.popularmovies.webservices.FetchMoviesTask;
-import app.com.example.android.popularmovies.adapters.GridViewAdapter;
+import app.com.example.android.popularmovies.BuildConfig;
 import app.com.example.android.popularmovies.R;
 import app.com.example.android.popularmovies.Utility;
+import app.com.example.android.popularmovies.adapters.GridViewAdapter;
 import app.com.example.android.popularmovies.data.MovieContract;
+import app.com.example.android.popularmovies.models.MovieInfo;
+import app.com.example.android.popularmovies.models.MoviesResponse;
+import app.com.example.android.popularmovies.webservices.MovieService;
+import okhttp3.OkHttpClient;
+import retrofit2.Call;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
  * A placeholder fragment containing a simple view.
  */
-public class MoviesFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
+public class MoviesFragment extends LifecycleFragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
     private int listPosition = ListView.INVALID_POSITION;
     private static final String SELECTED_KEY = "selected_position";
@@ -54,7 +62,8 @@ public class MoviesFragment extends Fragment implements LoaderManager.LoaderCall
     public static final int COL_MOVIE_RATING = 4;
     public static final int COL_MOVIE_SYNOPSIS = 5;
     public static final int COL_MOVIE_FAV = 6;
-    public static final int COL_MOVIE_URL = 7;
+    public static final int COL_MOVIE_SORT_SETTING = 7;
+    public static final int COL_MOVIE_URL = 8;
 
     private int LOADER_ID = 0;
 
@@ -140,24 +149,24 @@ public class MoviesFragment extends Fragment implements LoaderManager.LoaderCall
         gridview = (GridView) rootView.findViewById(R.id.gridView);
         gridview.setAdapter(mAdapter);
 
-        gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView adapterView, View view, int position, long l) {
-                Cursor cursor = (Cursor) adapterView.getItemAtPosition(position);
-                if (cursor != null) {
-                    cursor.moveToFirst();
-                    for (int i = 0; i < position; ++i) {
-                        cursor.moveToNext();
-                    }
-
-                    String sortSetting = Utility.getPreferredSortSetting(getContext());
-                    ImageView poster = (ImageView) view.findViewById(R.id.movie_image);
-                    ((Callback) getActivity())
-                            .onItemSelected(MovieContract.MovieEntry.buildUriWithId(cursor.getLong(COL_ID)), isNetworkAvailable(), poster);
-                }
-                listPosition = position;
-            }
-        });
+//        gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+//            @Override
+//            public void onItemClick(AdapterView adapterView, View view, int position, long l) {
+//                Cursor cursor = (Cursor) adapterView.getItemAtPosition(position);
+//                if (cursor != null) {
+//                    cursor.moveToFirst();
+//                    for (int i = 0; i < position; ++i) {
+//                        cursor.moveToNext();
+//                    }
+//
+//                    String sortSetting = Utility.getPreferredSortSetting(getContext());
+//                    ImageView poster = (ImageView) view.findViewById(R.id.movie_image);
+//                    ((Callback) getActivity())
+//                            .onItemSelected(MovieContract.MovieEntry.buildUriWithId(cursor.getLong(COL_ID)), isNetworkAvailable(), poster);
+//                }
+//                listPosition = position;
+//            }
+//        });
 
         if (savedInstanceState != null && savedInstanceState.containsKey(SELECTED_KEY)) {
             // The listview probably hasn't even been populated yet.  Actually perform the
@@ -173,8 +182,59 @@ public class MoviesFragment extends Fragment implements LoaderManager.LoaderCall
         // Get the Preference settings Popular is default setting
         String sortPref = Utility.getPreferredSortSetting(getContext());
         if (!sortPref.equals("favorite")) {
-            FetchMoviesTask task = new FetchMoviesTask(getContext());
-            task.execute(sortPref);
+            String API_BASE_URL = "http://api.themoviedb.org/3/";
+            OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
+            Retrofit.Builder builder = new Retrofit.Builder()
+                    .baseUrl(API_BASE_URL)
+                    .addConverterFactory(GsonConverterFactory.create());
+
+            Retrofit retrofit = builder.client(httpClient.build()).build();
+
+            MovieService client = retrofit.create(MovieService.class);
+
+            Call<MoviesResponse> call = client.getMovies(sortPref, BuildConfig.OPEN_TMDB_API_KEY);
+
+            call.enqueue(new retrofit2.Callback<MoviesResponse>() {
+                @Override
+                public void onResponse(Call<MoviesResponse> call, Response<MoviesResponse> response) {
+                    for (MovieInfo movie : response.body().getMovies()) {
+                        addMovie(movie);
+                        mAdapter.notifyDataSetChanged();
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<MoviesResponse> call, Throwable t) {
+
+                }
+            });
+        }
+    }
+
+    private void addMovie(MovieInfo movie) {
+        String preference = Utility.getPreferredSortSetting(getContext());
+
+        // check if movie exists in the database
+        String selection = MovieContract.MovieEntry.COLUMN_TITLE + " = ?";
+        Cursor cursor = getContext().getContentResolver().query(MovieContract.CONTENT_URI,
+                new String[]{MovieContract.MovieEntry.COLUMN_TITLE},
+                selection,
+                new String[]{movie.getTitle()},
+                null);
+
+        // add movie if it doesn't exist in database
+        if (cursor.moveToFirst()) {
+            cursor.close();
+        } else {
+            ContentValues values = new ContentValues();
+            values.put(MovieContract.MovieEntry.COLUMN_MOVIE_ID, movie.getId());
+            values.put(MovieContract.MovieEntry.COLUMN_TITLE, movie.getTitle());
+            values.put(MovieContract.MovieEntry.COLUMN_YEAR, movie.getRelease());
+            values.put(MovieContract.MovieEntry.COLUMN_SYNOPSIS, movie.getPlot());
+            values.put(MovieContract.MovieEntry.COLUMN_SORT_SETTING, preference);
+            values.put(MovieContract.MovieEntry.COLUMN_IMAGE_URL, "http://image.tmdb.org/t/p/w185/" + movie.getUrl());
+            values.put(MovieContract.MovieEntry.COLUMN_RATING, movie.getRating() + "/10");
+            getContext().getContentResolver().insert(MovieContract.CONTENT_URI, values);
         }
     }
 
