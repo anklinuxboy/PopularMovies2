@@ -1,22 +1,18 @@
-package app.com.example.android.popularmovies;
+package app.com.example.android.popularmovies.adapters;
 
-import android.app.Activity;
 import android.content.Context;
 import android.database.Cursor;
 import android.support.v4.widget.CursorAdapter;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 
 import com.squareup.picasso.Picasso;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.zip.Inflater;
+import app.com.example.android.popularmovies.CustomTextDrawable;
+import app.com.example.android.popularmovies.R;
+import app.com.example.android.popularmovies.views.MoviesFragment;
 
 /**
  * Created by ankit on 3/6/16.

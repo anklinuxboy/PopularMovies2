@@ -1,9 +1,11 @@
-package app.com.example.android.popularmovies;
+package app.com.example.android.popularmovies.views;
 
 
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+
+import app.com.example.android.popularmovies.R;
 
 /**
  * Created by ankit on 8/5/16.

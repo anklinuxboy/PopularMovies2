@@ -1,4 +1,4 @@
-package app.com.example.android.popularmovies;
+package app.com.example.android.popularmovies.views;
 
 import android.content.Context;
 import android.database.Cursor;
@@ -19,6 +19,10 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import app.com.example.android.popularmovies.webservices.FetchMoviesTask;
+import app.com.example.android.popularmovies.adapters.GridViewAdapter;
+import app.com.example.android.popularmovies.R;
+import app.com.example.android.popularmovies.Utility;
 import app.com.example.android.popularmovies.data.MovieContract;
 
 /**
@@ -26,7 +30,6 @@ import app.com.example.android.popularmovies.data.MovieContract;
  */
 public class MoviesFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
-    private final String LOG_TAG = MoviesFragment.class.getSimpleName();
     private int listPosition = ListView.INVALID_POSITION;
     private static final String SELECTED_KEY = "selected_position";
     // Save the poster HTTP Paths and the movie results
@@ -42,26 +45,24 @@ public class MoviesFragment extends Fragment implements LoaderManager.LoaderCall
             MovieContract.MovieEntry.COLUMN_FAVORITE,
             MovieContract.MovieEntry.COLUMN_SORT_SETTING,
             MovieContract.MovieEntry.COLUMN_IMAGE_URL
-
     };
 
-    static final int COL_ID = 0;
-    static final int COL_MOVIE_ID = 1;
-    static final int COL_MOVIE_TITLE = 2;
-    static final int COL_MOVIE_YEAR = 3;
-    static final int COL_MOVIE_RATING = 4;
-    static final int COL_MOVIE_SYNOPSIS = 5;
-    static final int COL_MOVIE_FAV = 6;
-    static final int COL_MOVIE_SORT = 7;
-    static final int COL_MOVIE_URL = 8;
+    public static final int COL_ID = 0;
+    public static final int COL_MOVIE_ID = 1;
+    public static final int COL_MOVIE_TITLE = 2;
+    public static final int COL_MOVIE_YEAR = 3;
+    public static final int COL_MOVIE_RATING = 4;
+    public static final int COL_MOVIE_SYNOPSIS = 5;
+    public static final int COL_MOVIE_FAV = 6;
+    public static final int COL_MOVIE_URL = 7;
 
     private int LOADER_ID = 0;
 
     public MoviesFragment() {
     }
 
-    public interface Callback {
-        public void onItemSelected(Uri uri, boolean networkAvailable, ImageView poster);
+    interface Callback {
+        void onItemSelected(Uri uri, boolean networkAvailable, ImageView poster);
     }
 
     @Override
@@ -72,9 +73,13 @@ public class MoviesFragment extends Fragment implements LoaderManager.LoaderCall
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
-        // When tablets rotate, the currently selected list item needs to be saved.
-        // When no item is selected, mPosition will be set to Listview.INVALID_POSITION,
-        // so check for that before storing.
+        /*
+
+        When tablets rotate, the currently selected list item needs to be saved.
+        When no item is selected, mPosition will be set to Listview.INVALID_POSITION,
+        so check for that before storing.
+
+        */
         if (listPosition != ListView.INVALID_POSITION) {
             outState.putInt(SELECTED_KEY, listPosition);
         }
@@ -89,21 +94,19 @@ public class MoviesFragment extends Fragment implements LoaderManager.LoaderCall
         String sort = MovieContract.MovieEntry.COLUMN_TITLE + " DESC";
         Uri movieUri = MovieContract.MovieEntry.buildUriWithSortSetting(sortPref);
 
-        CursorLoader cursorLoader = new CursorLoader(getActivity(),
+        return new CursorLoader(getActivity(),
                                     movieUri,
                                     MOVIE_PROJECTION_COLUMNS,
                                     null,
                                     null,
                                     sort);
-
-        return cursorLoader;
     }
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
         //Log.d(LOG_TAG, "onLoadFinished");
         if (cursor == null) {
-            if (isNetworkAvailable()) {
+            if (!isNetworkAvailable()) {
 
             }
         } else {
@@ -112,12 +115,10 @@ public class MoviesFragment extends Fragment implements LoaderManager.LoaderCall
                 gridview.smoothScrollToPosition(listPosition);
             }
         }
-
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-        //Log.d(LOG_TAG, "onLoadReset");
         mAdapter.swapCursor(null);
     }
 
@@ -148,15 +149,11 @@ public class MoviesFragment extends Fragment implements LoaderManager.LoaderCall
                     for (int i = 0; i < position; ++i) {
                         cursor.moveToNext();
                     }
-                    //Log.d(LOG_TAG, "movie ID " + cursor.getLong(COL_MOVIE_ID));
+
                     String sortSetting = Utility.getPreferredSortSetting(getContext());
                     ImageView poster = (ImageView) view.findViewById(R.id.movie_image);
                     ((Callback) getActivity())
                             .onItemSelected(MovieContract.MovieEntry.buildUriWithId(cursor.getLong(COL_ID)), isNetworkAvailable(), poster);
-//                    Intent intent = new Intent(getActivity(), DetailView.class)
-//                            .setData(MovieContract.MovieEntry.buildUriWithId(cursor.getLong(COL_ID)));
-//                    intent.putExtra("isNetwork", isNetworkAvailable());
-//                    startActivity(intent);
                 }
                 listPosition = position;
             }

@@ -1,4 +1,4 @@
-package app.com.example.android.popularmovies;
+package app.com.example.android.popularmovies.views;
 
 import android.content.ActivityNotFoundException;
 import android.content.ContentValues;
@@ -14,6 +14,7 @@ import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.ShareActionProvider;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -26,9 +27,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.support.v7.widget.ShareActionProvider;
 import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
@@ -48,8 +47,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import app.com.example.android.popularmovies.BuildConfig;
+import app.com.example.android.popularmovies.CustomTextDrawable;
+import app.com.example.android.popularmovies.R;
+import app.com.example.android.popularmovies.Utility;
 import app.com.example.android.popularmovies.data.MovieContract;
-import timber.log.Timber;
 
 /**
  * Created by ankit on 9/27/16.
@@ -73,12 +75,11 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             MovieContract.MovieEntry.COLUMN_FAVORITE,
             MovieContract.MovieEntry.COLUMN_SORT_SETTING,
             MovieContract.MovieEntry.COLUMN_IMAGE_URL
-
     };
 
     private static final String LOG_TAG = DetailFragment.class.getSimpleName();
-    static final String DETAIL_URI = "URI";
-    static final String NETWORK_KEY = "isNetwork";
+    public static final String DETAIL_URI = "URI";
+    public static final String NETWORK_KEY = "isNetwork";
     private Uri movieUri;
     private boolean isNetwork = false;
     private List<String> trailerTitles;
@@ -105,17 +106,6 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         activity.setSupportActionBar(toolbar);
         activity.getSupportActionBar().setDisplayShowTitleEnabled(false);
         activity.getSupportActionBar().setDisplayHomeAsUpEnabled(false);
-        // The detail Activity called via intent.
-//        Intent intent = getActivity().getIntent();
-//        if (intent == null || intent.getData() == null) {
-//            return null;
-//        }
-//
-//        if (intent != null) {
-//            mMovieStr = intent.getDataString();
-//            isNetwork = intent.getExtras().getBoolean(NETWORK_KEY);
-//        }
-
 
         listViewReviews = (ListView) rootView.findViewById(R.id.review_list_view);
         trailerList = (ListView) rootView.findViewById(R.id.trailer_list_view);

@@ -9,9 +9,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.util.Log;
 
-import app.com.example.android.popularmovies.MoviesFragment;
-import app.com.example.android.popularmovies.R;
-
 /**
  * Created by ankit on 9/4/16.
  */

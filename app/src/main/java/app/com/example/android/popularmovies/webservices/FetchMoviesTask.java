@@ -1,15 +1,11 @@
-package app.com.example.android.popularmovies;
+package app.com.example.android.popularmovies.webservices;
 
-import android.annotation.TargetApi;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
-import android.view.View;
-import android.widget.AdapterView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -21,9 +17,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
 
+import app.com.example.android.popularmovies.BuildConfig;
+import app.com.example.android.popularmovies.Utility;
 import app.com.example.android.popularmovies.data.MovieContract;
+import app.com.example.android.popularmovies.models.MovieInfo;
+import timber.log.Timber;
 
 /**
  * Created by ankit on 9/6/16.
@@ -125,7 +124,7 @@ public class FetchMoviesTask extends AsyncTask<String, Void, Void> {
                     .appendQueryParameter("api_key", BuildConfig.OPEN_TMDB_API_KEY);
 
             URL url = new URL(builder.build().toString());
-
+            Timber.d(url.toString());
             urlConnection = (HttpURLConnection) url.openConnection();
 
             // set the method of request and connect
