@@ -26,6 +26,7 @@ import app.com.example.android.popularmovies.adapters.GridViewAdapter;
 import app.com.example.android.popularmovies.data.MovieContract;
 import app.com.example.android.popularmovies.models.MovieInfo;
 import app.com.example.android.popularmovies.models.MoviesResponse;
+import app.com.example.android.popularmovies.viewmodels.MovieFragmentViewModel;
 import app.com.example.android.popularmovies.webservices.MovieService;
 import okhttp3.OkHttpClient;
 import retrofit2.Call;
@@ -66,6 +67,7 @@ public class MoviesFragment extends LifecycleFragment implements LoaderManager.L
     public static final int COL_MOVIE_URL = 8;
 
     private int LOADER_ID = 0;
+    private MovieFragmentViewModel viewModel;
 
     public MoviesFragment() {
     }
