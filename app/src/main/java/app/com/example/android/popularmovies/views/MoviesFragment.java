@@ -1,12 +1,13 @@
-package app.com.example.android.popularmovies;
+package app.com.example.android.popularmovies.views;
 
+import android.arch.lifecycle.LifecycleFragment;
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -19,14 +20,27 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import javax.inject.Inject;
+
+import app.com.example.android.popularmovies.BuildConfig;
+import app.com.example.android.popularmovies.MoviesApplication;
+import app.com.example.android.popularmovies.R;
+import app.com.example.android.popularmovies.Utility;
+import app.com.example.android.popularmovies.adapters.GridViewAdapter;
 import app.com.example.android.popularmovies.data.MovieContract;
+import app.com.example.android.popularmovies.models.MovieInfo;
+import app.com.example.android.popularmovies.models.MoviesResponse;
+import app.com.example.android.popularmovies.viewmodels.MovieFragmentViewModel;
+import app.com.example.android.popularmovies.webservices.MovieService;
+import retrofit2.Call;
+import retrofit2.Response;
+import retrofit2.Retrofit;
 
-/**
- * A placeholder fragment containing a simple view.
- */
-public class MoviesFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
+public class MoviesFragment extends LifecycleFragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
-    private final String LOG_TAG = MoviesFragment.class.getSimpleName();
+    @Inject
+    MovieService movieService;
+
     private int listPosition = ListView.INVALID_POSITION;
     private static final String SELECTED_KEY = "selected_position";
     // Save the poster HTTP Paths and the movie results
@@ -42,39 +56,44 @@ public class MoviesFragment extends Fragment implements LoaderManager.LoaderCall
             MovieContract.MovieEntry.COLUMN_FAVORITE,
             MovieContract.MovieEntry.COLUMN_SORT_SETTING,
             MovieContract.MovieEntry.COLUMN_IMAGE_URL
-
     };
 
-    static final int COL_ID = 0;
-    static final int COL_MOVIE_ID = 1;
-    static final int COL_MOVIE_TITLE = 2;
-    static final int COL_MOVIE_YEAR = 3;
-    static final int COL_MOVIE_RATING = 4;
-    static final int COL_MOVIE_SYNOPSIS = 5;
-    static final int COL_MOVIE_FAV = 6;
-    static final int COL_MOVIE_SORT = 7;
-    static final int COL_MOVIE_URL = 8;
+    public static final int COL_ID = 0;
+    public static final int COL_MOVIE_ID = 1;
+    public static final int COL_MOVIE_TITLE = 2;
+    public static final int COL_MOVIE_YEAR = 3;
+    public static final int COL_MOVIE_RATING = 4;
+    public static final int COL_MOVIE_SYNOPSIS = 5;
+    public static final int COL_MOVIE_FAV = 6;
+    public static final int COL_MOVIE_SORT_SETTING = 7;
+    public static final int COL_MOVIE_URL = 8;
 
     private int LOADER_ID = 0;
+    private MovieFragmentViewModel viewModel;
 
     public MoviesFragment() {
     }
 
-    public interface Callback {
-        public void onItemSelected(Uri uri, boolean networkAvailable, ImageView poster);
+    interface Callback {
+        void onItemSelected(Uri uri, boolean networkAvailable, ImageView poster);
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ((MoviesApplication)getActivity().getApplication()).getAppComponent().inject(this);
         getLoaderManager().initLoader(LOADER_ID, null, this);
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
-        // When tablets rotate, the currently selected list item needs to be saved.
-        // When no item is selected, mPosition will be set to Listview.INVALID_POSITION,
-        // so check for that before storing.
+        /*
+
+        When tablets rotate, the currently selected list item needs to be saved.
+        When no item is selected, mPosition will be set to Listview.INVALID_POSITION,
+        so check for that before storing.
+
+        */
         if (listPosition != ListView.INVALID_POSITION) {
             outState.putInt(SELECTED_KEY, listPosition);
         }
@@ -89,21 +108,19 @@ public class MoviesFragment extends Fragment implements LoaderManager.LoaderCall
         String sort = MovieContract.MovieEntry.COLUMN_TITLE + " DESC";
         Uri movieUri = MovieContract.MovieEntry.buildUriWithSortSetting(sortPref);
 
-        CursorLoader cursorLoader = new CursorLoader(getActivity(),
+        return new CursorLoader(getActivity(),
                                     movieUri,
                                     MOVIE_PROJECTION_COLUMNS,
                                     null,
                                     null,
                                     sort);
-
-        return cursorLoader;
     }
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
         //Log.d(LOG_TAG, "onLoadFinished");
         if (cursor == null) {
-            if (isNetworkAvailable()) {
+            if (!isNetworkAvailable()) {
 
             }
         } else {
@@ -112,12 +129,10 @@ public class MoviesFragment extends Fragment implements LoaderManager.LoaderCall
                 gridview.smoothScrollToPosition(listPosition);
             }
         }
-
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-        //Log.d(LOG_TAG, "onLoadReset");
         mAdapter.swapCursor(null);
     }
 
@@ -148,15 +163,11 @@ public class MoviesFragment extends Fragment implements LoaderManager.LoaderCall
                     for (int i = 0; i < position; ++i) {
                         cursor.moveToNext();
                     }
-                    //Log.d(LOG_TAG, "movie ID " + cursor.getLong(COL_MOVIE_ID));
+
                     String sortSetting = Utility.getPreferredSortSetting(getContext());
                     ImageView poster = (ImageView) view.findViewById(R.id.movie_image);
                     ((Callback) getActivity())
                             .onItemSelected(MovieContract.MovieEntry.buildUriWithId(cursor.getLong(COL_ID)), isNetworkAvailable(), poster);
-//                    Intent intent = new Intent(getActivity(), DetailView.class)
-//                            .setData(MovieContract.MovieEntry.buildUriWithId(cursor.getLong(COL_ID)));
-//                    intent.putExtra("isNetwork", isNetworkAvailable());
-//                    startActivity(intent);
                 }
                 listPosition = position;
             }
@@ -176,8 +187,50 @@ public class MoviesFragment extends Fragment implements LoaderManager.LoaderCall
         // Get the Preference settings Popular is default setting
         String sortPref = Utility.getPreferredSortSetting(getContext());
         if (!sortPref.equals("favorite")) {
-            FetchMoviesTask task = new FetchMoviesTask(getContext());
-            task.execute(sortPref);
+
+            Call<MoviesResponse> call = movieService.getMovies(sortPref, BuildConfig.OPEN_TMDB_API_KEY);
+
+            call.enqueue(new retrofit2.Callback<MoviesResponse>() {
+                @Override
+                public void onResponse(Call<MoviesResponse> call, Response<MoviesResponse> response) {
+                    for (MovieInfo movie : response.body().getMovies()) {
+                        addMovie(movie);
+                        mAdapter.notifyDataSetChanged();
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<MoviesResponse> call, Throwable t) {
+
+                }
+            });
+        }
+    }
+
+    private void addMovie(MovieInfo movie) {
+        String preference = Utility.getPreferredSortSetting(getContext());
+
+        // check if movie exists in the database
+        String selection = MovieContract.MovieEntry.COLUMN_TITLE + " = ?";
+        Cursor cursor = getContext().getContentResolver().query(MovieContract.CONTENT_URI,
+                new String[]{MovieContract.MovieEntry.COLUMN_TITLE},
+                selection,
+                new String[]{movie.getTitle()},
+                null);
+
+        // add movie if it doesn't exist in database
+        if (cursor.moveToFirst()) {
+            cursor.close();
+        } else {
+            ContentValues values = new ContentValues();
+            values.put(MovieContract.MovieEntry.COLUMN_MOVIE_ID, movie.getId());
+            values.put(MovieContract.MovieEntry.COLUMN_TITLE, movie.getTitle());
+            values.put(MovieContract.MovieEntry.COLUMN_YEAR, movie.getRelease());
+            values.put(MovieContract.MovieEntry.COLUMN_SYNOPSIS, movie.getPlot());
+            values.put(MovieContract.MovieEntry.COLUMN_SORT_SETTING, preference);
+            values.put(MovieContract.MovieEntry.COLUMN_IMAGE_URL, "http://image.tmdb.org/t/p/w185/" + movie.getUrl());
+            values.put(MovieContract.MovieEntry.COLUMN_RATING, movie.getRating() + "/10");
+            getContext().getContentResolver().insert(MovieContract.CONTENT_URI, values);
         }
     }
 

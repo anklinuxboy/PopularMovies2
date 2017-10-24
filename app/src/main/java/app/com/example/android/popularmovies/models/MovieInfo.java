@@ -1,17 +1,25 @@
-package app.com.example.android.popularmovies;
+package app.com.example.android.popularmovies.models;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+
+import com.google.gson.annotations.SerializedName;
 
 /**
  * Created by ankit on 3/7/16.
  */
 public class MovieInfo implements Parcelable {
+    @SerializedName("poster_path")
     private String _posterPath;
+    @SerializedName("overview")
     private String _plot;
+    @SerializedName("title")
     private String _title;
+    @SerializedName("release_date")
     private String _release;
+    @SerializedName("vote_average")
     private String _rating;
+    @SerializedName("id")
     private String _id;
 
     public MovieInfo(Parcel in) {

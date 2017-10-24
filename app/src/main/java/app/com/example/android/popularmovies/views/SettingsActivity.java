@@ -1,9 +1,11 @@
-package app.com.example.android.popularmovies;
+package app.com.example.android.popularmovies.views;
 
 import android.annotation.TargetApi;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
+
+import app.com.example.android.popularmovies.R;
 
 /**
  * Created by ankit on 8/4/16.

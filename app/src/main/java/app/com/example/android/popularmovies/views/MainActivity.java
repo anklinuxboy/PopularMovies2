@@ -1,5 +1,5 @@
 // TODO - remove api key from gradle.properties before uploading to git
-package app.com.example.android.popularmovies;
+package app.com.example.android.popularmovies.views;
 
 import android.content.Intent;
 import android.net.Uri;
@@ -11,6 +11,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ImageView;
 
+import app.com.example.android.popularmovies.R;
+import app.com.example.android.popularmovies.Utility;
 import timber.log.Timber;
 
 public class MainActivity extends AppCompatActivity implements MoviesFragment.Callback {
