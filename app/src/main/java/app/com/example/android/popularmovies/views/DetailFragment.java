@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
@@ -16,7 +15,6 @@ import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.ShareActionProvider;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -32,32 +30,33 @@ import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
+
 import app.com.example.android.popularmovies.BuildConfig;
 import app.com.example.android.popularmovies.CustomTextDrawable;
+import app.com.example.android.popularmovies.MoviesApplication;
 import app.com.example.android.popularmovies.R;
 import app.com.example.android.popularmovies.Utility;
 import app.com.example.android.popularmovies.data.MovieContract;
-
-/**
- * Created by ankit on 9/27/16.
- */
+import app.com.example.android.popularmovies.models.MovieReviewResponse;
+import app.com.example.android.popularmovies.models.MovieReviews;
+import app.com.example.android.popularmovies.models.MovieTrailerResponse;
+import app.com.example.android.popularmovies.models.MovieTrailers;
+import app.com.example.android.popularmovies.webservices.MovieService;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
 
 public class DetailFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
+
+    @Inject
+    MovieService movieService;
 
     private final int DETAIL_LOADER_ID = 1;
     private Map<String, String> movieTrailers;
@@ -87,7 +86,11 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     private ShareActionProvider actionProvider;
     private boolean loadFinished = false;
 
-    public DetailFragment() {}
+    public DetailFragment() {
+        movieTrailers = new HashMap<>();
+        movieReviews = new ArrayList<>();
+        trailerTitles = new ArrayList<>();
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -107,8 +110,10 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         activity.getSupportActionBar().setDisplayShowTitleEnabled(false);
         activity.getSupportActionBar().setDisplayHomeAsUpEnabled(false);
 
-        listViewReviews = (ListView) rootView.findViewById(R.id.review_list_view);
-        trailerList = (ListView) rootView.findViewById(R.id.trailer_list_view);
+        ((MoviesApplication)(getActivity().getApplication())).getAppComponent().inject(this);
+
+        listViewReviews = rootView.findViewById(R.id.review_list_view);
+        trailerList = rootView.findViewById(R.id.trailer_list_view);
         getLoaderManager().initLoader(DETAIL_LOADER_ID, null, this);
 
         return rootView;
@@ -221,127 +226,68 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     public void onLoaderReset(Loader<Cursor> loader) {}
 
     public void getTrailersReviews(String movieId) {
-        FetchMovieTrailers fetchMovieTrailers = new FetchMovieTrailers();
-        FetchMovieReviews fetchMovieReviews = new FetchMovieReviews();
-        fetchMovieTrailers.execute(movieId);
-        fetchMovieReviews.execute(movieId);
+        getMovieTrailers(movieId);
+        getMovieReviews(movieId);
     }
 
-    public class FetchMovieTrailers extends AsyncTask<String, Void, Void> {
+    private void getMovieReviews(String movieId) {
+        Call<MovieReviewResponse> reviewResponseCall = movieService.getMovieReviews(movieId, BuildConfig.OPEN_TMDB_API_KEY);
 
-        public FetchMovieTrailers() {
-            movieTrailers = new HashMap<>();
-            trailerTitles = new ArrayList<>();
-        }
+        reviewResponseCall.enqueue(new Callback<MovieReviewResponse>() {
+            @Override
+            public void onResponse(Call<MovieReviewResponse> call, Response<MovieReviewResponse> response) {
+                for (MovieReviews review : response.body().getMovieReviews()) {
+                    movieReviews.add(review.getReview());
+                }
 
-        @Override
-        protected Void doInBackground(String... params) {
-            String movieId = params[0];
-            HttpURLConnection trailerUrlConnection = null;
-            BufferedReader reader = null;
+                reviewAdapter = new ArrayAdapter<>(getContext(), android.R.layout.simple_list_item_1, movieReviews);
+                listViewReviews.setVisibility(View.VISIBLE);
+                listViewReviews.setAdapter(reviewAdapter);
+                reviewAdapter.notifyDataSetChanged();
+            }
 
-            String movieTrailerJSONRaw = null;
+            @Override
+            public void onFailure(Call<MovieReviewResponse> call, Throwable t) {
 
-            try {
-                Uri.Builder trailerBuilder = new Uri.Builder();
-                trailerBuilder.scheme("http")
-                        .authority("api.themoviedb.org")
-                        .appendPath("3")
-                        .appendPath("movie")
-                        .appendPath(movieId)
-                        .appendPath("videos")
-                        .appendQueryParameter("api_key", BuildConfig.OPEN_TMDB_API_KEY);
+            }
+        });
+    }
 
+    private void getMovieTrailers(String movieID) {
+        Call<MovieTrailerResponse> trailerResponseCall = movieService.getMovieTrailers(movieID, BuildConfig.OPEN_TMDB_API_KEY);
 
-
-                URL trailerUrl = new URL(trailerBuilder.build().toString());
-
-                trailerUrlConnection = (HttpURLConnection) trailerUrl.openConnection();
-
-                // set the method of request and connect
-                trailerUrlConnection.setRequestMethod("GET");
-                trailerUrlConnection.setDoInput(true);
-
-                trailerUrlConnection.connect();
-                // Read input stream into a string
-                InputStream tinputStream = trailerUrlConnection.getInputStream();
-
-                StringBuffer tbuffer = new StringBuffer();
-                if (tinputStream == null)
-                    return null;
-
-                reader = new BufferedReader(new InputStreamReader(tinputStream));
-
-                String line;
-                while ((line = reader.readLine()) != null)
-                    tbuffer.append(line + "\n");
-
-                if (tbuffer.length() == 0)
-                    return null;
-
-                movieTrailerJSONRaw = tbuffer.toString();
-                getTrailerData(movieTrailerJSONRaw);
-            } catch (IOException e) {
-                Log.e(LOG_TAG, "Error", e);
-                return null;
-            } catch (JSONException e) {
-                e.printStackTrace();
-            } finally {
-                // close the connection and reader.
-                if (trailerUrlConnection != null)
-                    trailerUrlConnection.disconnect();
-
-                if (reader != null) {
-                    try {
-                        reader.close();
-                    } catch (final IOException e) {
-                        Log.e(LOG_TAG, "Error Closing Stream", e);
+        trailerResponseCall.enqueue(new Callback<MovieTrailerResponse>() {
+            @Override
+            public void onResponse(Call<MovieTrailerResponse> call, Response<MovieTrailerResponse> response) {
+                for (MovieTrailers trailer : response.body().getMovieTrailers()) {
+                    trailerTitles.add(trailer.getTrailerName());
+                    movieTrailers.put(trailer.getTrailerName(), trailer.getTrailerKey());
+                }
+                trailerAdapter = new ArrayAdapter<>(getActivity(),
+                        R.layout.detail_trailers, R.id.trailer_num,
+                        trailerTitles);
+                trailerAdapter.notifyDataSetChanged();
+                trailerList.setAdapter(trailerAdapter);
+                Utility.setListViewHeightBasedOnItems(trailerList);
+                loadFinished = true;
+                if (null != actionProvider && trailerTitles.size() != 0) {
+                    actionProvider.setShareIntent(createShareIntent());
+                }
+                trailerList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                        String key = (String) trailerList.getItemAtPosition(position);
+                        String value = movieTrailers.get(key);
+                        startYouTubeVideo(value);
                     }
-                }
+                });
             }
-            return null;
-        }
 
-        @Override
-        protected void onPostExecute(Void nothing) {
-            trailerAdapter = new ArrayAdapter<>(getActivity(),
-                    R.layout.detail_trailers, R.id.trailer_num,
-                    trailerTitles);
-            trailerAdapter.notifyDataSetChanged();
-            trailerList.setAdapter(trailerAdapter);
-            Utility.setListViewHeightBasedOnItems(trailerList);
-            loadFinished = true;
-            if (null != actionProvider && trailerTitles.size() != 0) {
-                actionProvider.setShareIntent(createShareIntent());
+            @Override
+            public void onFailure(Call<MovieTrailerResponse> call, Throwable t) {
+
             }
-            trailerList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    String key = (String) trailerList.getItemAtPosition(position);
-                    String value = movieTrailers.get(key);
-                    startYouTubeVideo(value);
-                }
-            });
-        }
-
-        private void getTrailerData(String movieTrailerJSONRaw) throws JSONException {
-            final String TRAILER_RESULT = "results";
-            final String TRAILER_NAME = "name";
-            final String TRAILER_KEY = "key";
-
-            JSONObject trailersObj = new JSONObject(movieTrailerJSONRaw);
-            JSONArray resultArr = trailersObj.getJSONArray(TRAILER_RESULT);
-
-            for (int i = 0; i < resultArr.length(); ++i) {
-                String trailerName;
-                String trailerLink;
-                JSONObject trailer = resultArr.getJSONObject(i);
-                trailerName = trailer.getString(TRAILER_NAME);
-                trailerLink = trailer.getString(TRAILER_KEY);
-                trailerTitles.add(trailerName);
-                movieTrailers.put(trailerName, trailerLink);
-            }
-        }
+        });
     }
 
     private void startYouTubeVideo(String value) {
@@ -354,101 +300,4 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             startActivity(webIntent);
         }
     }
-
-    public class FetchMovieReviews extends AsyncTask<String, Void, Void> {
-
-        public FetchMovieReviews() {
-            movieReviews = new ArrayList<>();
-        }
-        @Override
-        protected Void doInBackground(String... params) {
-            String movieId = params[0];
-            
-            HttpURLConnection reviewsUrlConnection = null;
-            BufferedReader reader = null;
-            String movieReviewJSONRaw = null;
-
-            try {
-                Uri.Builder reviewBuilder = new Uri.Builder();
-                reviewBuilder.scheme("http")
-                        .authority("api.themoviedb.org")
-                        .appendPath("3")
-                        .appendPath("movie")
-                        .appendPath(movieId)
-                        .appendPath("reviews")
-                        .appendQueryParameter("api_key", BuildConfig.OPEN_TMDB_API_KEY);
-
-
-                URL reviewsUrl = new URL(reviewBuilder.build().toString());
-
-                reviewsUrlConnection = (HttpURLConnection) reviewsUrl.openConnection();
-
-                // set the method of request and connect
-                reviewsUrlConnection.setRequestMethod("GET");
-                reviewsUrlConnection.setDoInput(true);
-
-                reviewsUrlConnection.connect();
-                // Read input stream into a string
-                InputStream inputStream = reviewsUrlConnection.getInputStream();
-
-                StringBuffer buffer = new StringBuffer();
-                if (inputStream == null)
-                    return null;
-
-                reader = new BufferedReader(new InputStreamReader(inputStream));
-
-                String line;
-                while ((line = reader.readLine()) != null)
-                    buffer.append(line + "\n");
-
-                if (buffer.length() == 0)
-                    return null;
-
-                movieReviewJSONRaw = buffer.toString();
-                getReviewData(movieReviewJSONRaw);
-            } catch (IOException e) {
-                Log.e(LOG_TAG, "Error", e);
-                return null;
-            } catch (JSONException e) {
-                e.printStackTrace();
-            } finally {
-                // close the connection and reader.
-                if (reviewsUrlConnection != null)
-                    reviewsUrlConnection.disconnect();
-
-                if (reader != null) {
-                    try {
-                        reader.close();
-                    } catch (final IOException e) {
-                        Log.e(LOG_TAG, "Error Closing Stream", e);
-                    }
-                }
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void nothing) {
-            reviewAdapter = new ArrayAdapter<>(getContext(), android.R.layout.simple_list_item_1, movieReviews);
-            listViewReviews.setVisibility(View.VISIBLE);
-            listViewReviews.setAdapter(reviewAdapter);
-            reviewAdapter.notifyDataSetChanged();
-        }
-
-        private void getReviewData(String movieReviewJSONRaw) throws JSONException {
-            final String REVIEW_RESULT = "results";
-            final String REVIEW_CONTENT = "content";
-
-            JSONObject reviewResults = new JSONObject(movieReviewJSONRaw);
-            JSONArray reviews = reviewResults.getJSONArray(REVIEW_RESULT);
-
-            for (int i = 0; i < reviews.length(); ++i) {
-                String review;
-                JSONObject movieReview = reviews.getJSONObject(i);
-                review = movieReview.getString(REVIEW_CONTENT);
-                movieReviews.add(review);
-            }
-        }
-    }
-
 }

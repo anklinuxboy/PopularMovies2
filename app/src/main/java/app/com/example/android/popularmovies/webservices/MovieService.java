@@ -1,9 +1,7 @@
 package app.com.example.android.popularmovies.webservices;
 
-import java.util.List;
-
-import app.com.example.android.popularmovies.models.MovieReviews;
-import app.com.example.android.popularmovies.models.MovieTrailers;
+import app.com.example.android.popularmovies.models.MovieReviewResponse;
+import app.com.example.android.popularmovies.models.MovieTrailerResponse;
 import app.com.example.android.popularmovies.models.MoviesResponse;
 import retrofit2.Call;
 import retrofit2.http.GET;
@@ -15,8 +13,8 @@ public interface MovieService {
     Call<MoviesResponse> getMovies(@Path("sortPref") String sortPref, @Query("api_key") String key);
 
     @GET("movie/{movieID}/videos")
-    Call<List<MovieTrailers>> getMovieTrailers(@Path("movieID") String movieID, @Query("api_key") String key);
+    Call<MovieTrailerResponse> getMovieTrailers(@Path("movieID") String movieID, @Query("api_key") String key);
 
     @GET("movie/{movieID}/reviews")
-    Call<List<MovieReviews>> getMovieReviews(@Path("movieID") String movieID, @Query("api_key") String key);
+    Call<MovieReviewResponse> getMovieReviews(@Path("movieID") String movieID, @Query("api_key") String key);
 }

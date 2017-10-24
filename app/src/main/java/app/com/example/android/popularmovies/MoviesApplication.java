@@ -4,12 +4,19 @@ import android.app.Application;
 
 import com.facebook.stetho.Stetho;
 
+import app.com.example.android.popularmovies.di.AppComponent;
+import app.com.example.android.popularmovies.di.AppModule;
+import app.com.example.android.popularmovies.di.DaggerAppComponent;
+import app.com.example.android.popularmovies.di.NetModule;
 import timber.log.Timber;
 
 /**
  * Created by ankit on 9/9/16.
  */
-public class MyApplication extends Application {
+public class MoviesApplication extends Application {
+
+    private AppComponent appComponent;
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -33,5 +40,14 @@ public class MyApplication extends Application {
         // Initialize Stetho with the Initializer
         Stetho.initialize(initializer);
         Timber.plant(new Timber.DebugTree());
+
+        appComponent = DaggerAppComponent.builder()
+                .appModule(new AppModule(this))
+                .netModule(new NetModule())
+                .build();
+    }
+
+    public AppComponent getAppComponent() {
+        return appComponent;
     }
 }

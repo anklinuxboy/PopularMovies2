@@ -3,6 +3,7 @@ package app.com.example.android.popularmovies.data;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+
 import app.com.example.android.popularmovies.data.MovieContract.MovieEntry;
 
 /**
