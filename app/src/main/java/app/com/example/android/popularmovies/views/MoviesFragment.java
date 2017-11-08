@@ -30,6 +30,7 @@ import app.com.example.android.popularmovies.adapters.GridViewAdapter;
 import app.com.example.android.popularmovies.data.MovieContract;
 import app.com.example.android.popularmovies.models.MovieInfo;
 import app.com.example.android.popularmovies.models.MoviesResponse;
+import app.com.example.android.popularmovies.observers.MovieFragmentObserver;
 import app.com.example.android.popularmovies.viewmodels.MovieFragmentViewModel;
 import app.com.example.android.popularmovies.webservices.MovieService;
 import retrofit2.Call;
@@ -83,6 +84,7 @@ public class MoviesFragment extends LifecycleFragment implements LoaderManager.L
         super.onCreate(savedInstanceState);
         ((MoviesApplication)getActivity().getApplication()).getAppComponent().inject(this);
         getLoaderManager().initLoader(LOADER_ID, null, this);
+        getLifecycle().addObserver(new MovieFragmentObserver());
     }
 
     @Override
