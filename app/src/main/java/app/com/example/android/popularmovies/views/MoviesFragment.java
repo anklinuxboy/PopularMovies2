@@ -33,6 +33,7 @@ import app.com.example.android.popularmovies.R;
 import app.com.example.android.popularmovies.Utility;
 import app.com.example.android.popularmovies.adapters.GridViewAdapter;
 import app.com.example.android.popularmovies.data.MovieContract;
+import app.com.example.android.popularmovies.data.MovieDatabase;
 import app.com.example.android.popularmovies.models.MovieInfo;
 import app.com.example.android.popularmovies.models.MoviesResponse;
 import app.com.example.android.popularmovies.observers.MovieFragmentObserver;
@@ -75,6 +76,9 @@ public class MoviesFragment extends Fragment implements LoaderManager.LoaderCall
     private int LOADER_ID = 0;
     private MovieFragmentViewModel viewModel;
 
+    @Inject
+    MovieDatabase movieDatabase;
+
     public MoviesFragment() {
     }
 
@@ -85,6 +89,7 @@ public class MoviesFragment extends Fragment implements LoaderManager.LoaderCall
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ((MoviesApplication)getActivity().getApplication()).getAppComponent().inject(this);
         getLoaderManager().initLoader(LOADER_ID, null, this);
         getLifecycle().addObserver(new MovieFragmentObserver());
     }
@@ -217,7 +222,7 @@ public class MoviesFragment extends Fragment implements LoaderManager.LoaderCall
             values.put(MovieContract.MovieEntry.COLUMN_YEAR, movie.getRelease());
             values.put(MovieContract.MovieEntry.COLUMN_SYNOPSIS, movie.getPlot());
             values.put(MovieContract.MovieEntry.COLUMN_SORT_SETTING, preference);
-            values.put(MovieContract.MovieEntry.COLUMN_IMAGE_URL, "http://image.tmdb.org/t/p/w185/" + movie.getUrl());
+            values.put(MovieContract.MovieEntry.COLUMN_IMAGE_URL, "http://image.tmdb.org/t/p/w185/" + movie.getPosterPath());
             values.put(MovieContract.MovieEntry.COLUMN_RATING, movie.getRating() + "/10");
             getContext().getContentResolver().insert(MovieContract.CONTENT_URI, values);
         }

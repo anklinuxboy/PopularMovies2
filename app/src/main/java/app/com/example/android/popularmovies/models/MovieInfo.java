@@ -1,5 +1,9 @@
 package app.com.example.android.popularmovies.models;
 
+import android.arch.persistence.room.ColumnInfo;
+import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.Ignore;
+import android.arch.persistence.room.PrimaryKey;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -8,31 +12,46 @@ import com.google.gson.annotations.SerializedName;
 /**
  * Created by ankit on 3/7/16.
  */
+@Entity(tableName = "movies")
 public class MovieInfo implements Parcelable {
+    @PrimaryKey
+    private int uid;
+
+    @Ignore
     @SerializedName("poster_path")
-    private String _posterPath;
+    private String posterPath;
+
     @SerializedName("overview")
-    private String _plot;
+    private String plot;
+
     @SerializedName("title")
-    private String _title;
+    private String title;
+
     @SerializedName("release_date")
-    private String _release;
+    private String release;
+
+    @Ignore
     @SerializedName("vote_average")
-    private String _rating;
+    private String rating;
+
+    @ColumnInfo(name = "movieId")
     @SerializedName("id")
-    private String _id;
+    private String id;
+
+    private String posterUrl;
+    private String voterRating;
 
     public MovieInfo(Parcel in) {
-        _posterPath = in.readString();
-        _plot = in.readString();
-        _title = in.readString();
-        _release = in.readString();
-        _rating = in.readString();
-        _id = in.readString();
+        posterPath = in.readString();
+        plot = in.readString();
+        title = in.readString();
+        release = in.readString();
+        rating = in.readString();
+        id = in.readString();
     }
 
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeString(getUrl());
+        dest.writeString(getPosterPath());
         dest.writeString(getPlot());
         dest.writeString(getTitle());
         dest.writeString(getRelease());
@@ -40,15 +59,7 @@ public class MovieInfo implements Parcelable {
         dest.writeString(getId());
     }
 
-    //Constructor for class
-    public MovieInfo(String url, String plot, String title, String release, String rating, String id) {
-        _posterPath = url;
-        _plot = plot;
-        _title = title;
-        _release = release;
-        _rating = rating;
-        _id = id;
-    }
+    public MovieInfo() {}
 
     // Creator
     public static final Parcelable.Creator CREATOR
@@ -66,28 +77,76 @@ public class MovieInfo implements Parcelable {
     public int describeContents() {
         return 0;
     }
-    // Getter methods
-    public String getUrl() {
-        return _posterPath;
+
+    public int getUid() {
+        return uid;
+    }
+
+    public void setUid(int uid) {
+        this.uid = uid;
+    }
+
+    public String getPosterPath() {
+        return posterPath;
+    }
+
+    public void setPosterPath(String posterPath) {
+        this.posterPath = posterPath;
     }
 
     public String getPlot() {
-        return _plot;
+        return plot;
+    }
+
+    public void setPlot(String plot) {
+        this.plot = plot;
     }
 
     public String getTitle() {
-        return _title;
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public String getRelease() {
-        return _release;
+        return release;
+    }
+
+    public void setRelease(String release) {
+        this.release = release;
     }
 
     public String getRating() {
-        return _rating;
+        return rating;
+    }
+
+    public void setRating(String rating) {
+        this.rating = rating;
     }
 
     public String getId() {
-        return _id;
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getPosterUrl() {
+        return posterUrl;
+    }
+
+    public void setPosterUrl(String posterUrl) {
+        this.posterUrl = posterUrl;
+    }
+
+    public String getVoterRating() {
+        return voterRating;
+    }
+
+    public void setVoterRating(String voterRating) {
+        this.voterRating = voterRating;
     }
 }
