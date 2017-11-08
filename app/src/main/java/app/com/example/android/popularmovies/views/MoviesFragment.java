@@ -1,6 +1,7 @@
 package app.com.example.android.popularmovies.views;
 
-import android.arch.lifecycle.LifecycleFragment;
+import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -8,6 +9,8 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -19,6 +22,8 @@ import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Toast;
+
+import java.util.List;
 
 import javax.inject.Inject;
 
@@ -35,12 +40,10 @@ import app.com.example.android.popularmovies.viewmodels.MovieFragmentViewModel;
 import app.com.example.android.popularmovies.webservices.MovieService;
 import retrofit2.Call;
 import retrofit2.Response;
-import retrofit2.Retrofit;
 
-public class MoviesFragment extends LifecycleFragment implements LoaderManager.LoaderCallbacks<Cursor> {
+public class MoviesFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
-    @Inject
-    MovieService movieService;
+
 
     private int listPosition = ListView.INVALID_POSITION;
     private static final String SELECTED_KEY = "selected_position";
@@ -82,7 +85,6 @@ public class MoviesFragment extends LifecycleFragment implements LoaderManager.L
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        ((MoviesApplication)getActivity().getApplication()).getAppComponent().inject(this);
         getLoaderManager().initLoader(LOADER_ID, null, this);
         getLifecycle().addObserver(new MovieFragmentObserver());
     }
@@ -156,6 +158,16 @@ public class MoviesFragment extends LifecycleFragment implements LoaderManager.L
         gridview = (GridView) rootView.findViewById(R.id.gridView);
         gridview.setAdapter(mAdapter);
 
+        viewModel = ViewModelProviders.of(getActivity()).get(MovieFragmentViewModel.class);
+
+        if (isNetworkAvailable())
+            viewModel.getMovieInfo().observe(getActivity(), movieInfos -> {
+                for (MovieInfo movie : movieInfos) {
+                    addMovie(movie);
+                    mAdapter.notifyDataSetChanged();
+                }
+            });
+
         gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView adapterView, View view, int position, long l) {
@@ -182,31 +194,6 @@ public class MoviesFragment extends LifecycleFragment implements LoaderManager.L
         }
 
         return rootView;
-    }
-
-
-    private void updateMovies() {
-        // Get the Preference settings Popular is default setting
-        String sortPref = Utility.getPreferredSortSetting(getContext());
-        if (!sortPref.equals("favorite")) {
-
-            Call<MoviesResponse> call = movieService.getMovies(sortPref, BuildConfig.OPEN_TMDB_API_KEY);
-
-            call.enqueue(new retrofit2.Callback<MoviesResponse>() {
-                @Override
-                public void onResponse(Call<MoviesResponse> call, Response<MoviesResponse> response) {
-                    for (MovieInfo movie : response.body().getMovies()) {
-                        addMovie(movie);
-                        mAdapter.notifyDataSetChanged();
-                    }
-                }
-
-                @Override
-                public void onFailure(Call<MoviesResponse> call, Throwable t) {
-
-                }
-            });
-        }
     }
 
     private void addMovie(MovieInfo movie) {
@@ -244,8 +231,6 @@ public class MoviesFragment extends LifecycleFragment implements LoaderManager.L
     @Override
     public void onResume() {
         super.onResume();
-        if (isNetworkAvailable())
-            updateMovies();
         getLoaderManager().restartLoader(LOADER_ID, null, this);
     }
 
