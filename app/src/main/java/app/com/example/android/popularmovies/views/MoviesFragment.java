@@ -43,8 +43,7 @@ import retrofit2.Response;
 
 public class MoviesFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
-    @Inject
-    MovieService movieService;
+
 
     private int listPosition = ListView.INVALID_POSITION;
     private static final String SELECTED_KEY = "selected_position";
@@ -86,20 +85,8 @@ public class MoviesFragment extends Fragment implements LoaderManager.LoaderCall
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        ((MoviesApplication)getActivity().getApplication()).getAppComponent().inject(this);
         getLoaderManager().initLoader(LOADER_ID, null, this);
         getLifecycle().addObserver(new MovieFragmentObserver());
-
-        viewModel = ViewModelProviders.of(this).get(MovieFragmentViewModel.class);
-
-        final Observer<List<MovieInfo>> movieObserver = new Observer<List<MovieInfo>>() {
-            @Override
-            public void onChanged(@Nullable List<MovieInfo> movieInfos) {
-                // TODO update the recyclerview adapter
-            }
-        };
-
-        viewModel.getMovieInfo().observe(this, movieObserver);
     }
 
     @Override
@@ -171,6 +158,16 @@ public class MoviesFragment extends Fragment implements LoaderManager.LoaderCall
         gridview = (GridView) rootView.findViewById(R.id.gridView);
         gridview.setAdapter(mAdapter);
 
+        viewModel = ViewModelProviders.of(getActivity()).get(MovieFragmentViewModel.class);
+
+        if (isNetworkAvailable())
+            viewModel.getMovieInfo().observe(getActivity(), movieInfos -> {
+                for (MovieInfo movie : movieInfos) {
+                    addMovie(movie);
+                    mAdapter.notifyDataSetChanged();
+                }
+            });
+
         gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView adapterView, View view, int position, long l) {
@@ -197,31 +194,6 @@ public class MoviesFragment extends Fragment implements LoaderManager.LoaderCall
         }
 
         return rootView;
-    }
-
-
-    private void updateMovies() {
-        // Get the Preference settings Popular is default setting
-        String sortPref = Utility.getPreferredSortSetting(getContext());
-        if (!sortPref.equals("favorite")) {
-
-            Call<MoviesResponse> call = movieService.getMovies(sortPref, BuildConfig.OPEN_TMDB_API_KEY);
-
-            call.enqueue(new retrofit2.Callback<MoviesResponse>() {
-                @Override
-                public void onResponse(Call<MoviesResponse> call, Response<MoviesResponse> response) {
-                    for (MovieInfo movie : response.body().getMovies()) {
-                        addMovie(movie);
-                        mAdapter.notifyDataSetChanged();
-                    }
-                }
-
-                @Override
-                public void onFailure(Call<MoviesResponse> call, Throwable t) {
-
-                }
-            });
-        }
     }
 
     private void addMovie(MovieInfo movie) {
@@ -259,8 +231,6 @@ public class MoviesFragment extends Fragment implements LoaderManager.LoaderCall
     @Override
     public void onResume() {
         super.onResume();
-        if (isNetworkAvailable())
-            updateMovies();
         getLoaderManager().restartLoader(LOADER_ID, null, this);
     }
 
