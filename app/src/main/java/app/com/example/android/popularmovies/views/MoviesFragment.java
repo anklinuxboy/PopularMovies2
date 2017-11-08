@@ -1,6 +1,7 @@
 package app.com.example.android.popularmovies.views;
 
-import android.arch.lifecycle.LifecycleFragment;
+import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -8,6 +9,8 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -19,6 +22,8 @@ import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Toast;
+
+import java.util.List;
 
 import javax.inject.Inject;
 
@@ -35,9 +40,8 @@ import app.com.example.android.popularmovies.viewmodels.MovieFragmentViewModel;
 import app.com.example.android.popularmovies.webservices.MovieService;
 import retrofit2.Call;
 import retrofit2.Response;
-import retrofit2.Retrofit;
 
-public class MoviesFragment extends LifecycleFragment implements LoaderManager.LoaderCallbacks<Cursor> {
+public class MoviesFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
     @Inject
     MovieService movieService;
@@ -85,6 +89,17 @@ public class MoviesFragment extends LifecycleFragment implements LoaderManager.L
         ((MoviesApplication)getActivity().getApplication()).getAppComponent().inject(this);
         getLoaderManager().initLoader(LOADER_ID, null, this);
         getLifecycle().addObserver(new MovieFragmentObserver());
+
+        viewModel = ViewModelProviders.of(this).get(MovieFragmentViewModel.class);
+
+        final Observer<List<MovieInfo>> movieObserver = new Observer<List<MovieInfo>>() {
+            @Override
+            public void onChanged(@Nullable List<MovieInfo> movieInfos) {
+                // TODO update the recyclerview adapter
+            }
+        };
+
+        viewModel.getMovieInfo().observe(this, movieObserver);
     }
 
     @Override
