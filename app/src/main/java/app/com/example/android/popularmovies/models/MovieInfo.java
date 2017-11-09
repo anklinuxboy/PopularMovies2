@@ -6,16 +6,17 @@ import android.arch.persistence.room.Ignore;
 import android.arch.persistence.room.PrimaryKey;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.annotation.NonNull;
 
 import com.google.gson.annotations.SerializedName;
+
+import javax.annotation.Nonnull;
 
 /**
  * Created by ankit on 3/7/16.
  */
 @Entity(tableName = "movies")
 public class MovieInfo implements Parcelable {
-    @PrimaryKey
-    private int uid;
 
     @Ignore
     @SerializedName("poster_path")
@@ -34,12 +35,23 @@ public class MovieInfo implements Parcelable {
     @SerializedName("vote_average")
     private String rating;
 
+    @NonNull
+    @PrimaryKey
     @ColumnInfo(name = "movieId")
     @SerializedName("id")
     private String id;
 
+    @ColumnInfo(name = "poster_url")
     private String posterUrl;
+
+    @ColumnInfo(name = "movie_rating")
     private String voterRating;
+
+    @ColumnInfo(name = "sort_setting")
+    private String sortSetting;
+
+    @ColumnInfo(name = "favorite")
+    private Boolean favorite;
 
     public MovieInfo(Parcel in) {
         posterPath = in.readString();
@@ -76,14 +88,6 @@ public class MovieInfo implements Parcelable {
     @Override
     public int describeContents() {
         return 0;
-    }
-
-    public int getUid() {
-        return uid;
-    }
-
-    public void setUid(int uid) {
-        this.uid = uid;
     }
 
     public String getPosterPath() {
@@ -148,5 +152,21 @@ public class MovieInfo implements Parcelable {
 
     public void setVoterRating(String voterRating) {
         this.voterRating = voterRating;
+    }
+
+    public String getSortSetting() {
+        return sortSetting;
+    }
+
+    public void setSortSetting(String sortSetting) {
+        this.sortSetting = sortSetting;
+    }
+
+    public Boolean getFavorite() {
+        return favorite;
+    }
+
+    public void setFavorite(Boolean favorite) {
+        this.favorite = favorite;
     }
 }

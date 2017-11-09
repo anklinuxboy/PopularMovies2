@@ -20,10 +20,16 @@ public interface MovieDao {
     MovieInfo findById(String uid);
 
     @Query("SELECT * FROM movies where title LIKE :title LIMIT 1")
+    MovieInfo findByTitle(String title);
 
+    @Query("SELECT * FROM movies where sort_setting LIKE :sort ORDER BY title DESC")
+    List<MovieInfo> getMoviesBySortSetting(String sort);
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAll(MovieInfo... movies);
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertMovie(MovieInfo movie);
 
     @Delete
     void deleteAll(MovieInfo... movies);

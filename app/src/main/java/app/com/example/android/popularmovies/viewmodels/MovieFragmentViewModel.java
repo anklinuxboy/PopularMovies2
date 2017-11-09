@@ -9,6 +9,7 @@ import android.arch.lifecycle.ViewModel;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.widget.Toast;
 
 import java.util.List;
 
@@ -28,22 +29,24 @@ import retrofit2.Response;
 public class MovieFragmentViewModel extends AndroidViewModel {
     @Inject
     MovieService movieService;
+    Application application;
+
     private MutableLiveData<List<MovieInfo>> movieInfo;
 
     public MovieFragmentViewModel(Application application) {
         super(application);
+        this.application = application;
         ((MoviesApplication)application).getAppComponent().inject(this);
-        movieInfo = new MutableLiveData<>();
-        loadMovies(application);
     }
 
     public MutableLiveData<List<MovieInfo>> getMovieInfo() {
         return movieInfo;
     }
 
-    private void loadMovies(Application application) {
+    public void loadMovies() {
+        movieInfo = new MutableLiveData<>();
         // Get the Preference settings Popular is default setting
-        String sortPref = Utility.getPreferredSortSetting(application.getApplicationContext());
+        String sortPref = Utility.getPreferredSortSetting(this.application);
         if (!sortPref.equals("favorite")) {
 
             Call<MoviesResponse> call = movieService.getMovies(sortPref, BuildConfig.OPEN_TMDB_API_KEY);
@@ -56,7 +59,7 @@ public class MovieFragmentViewModel extends AndroidViewModel {
 
                 @Override
                 public void onFailure(Call<MoviesResponse> call, Throwable t) {
-
+                    Toast.makeText(application.getApplicationContext(), "Failure", Toast.LENGTH_SHORT).show();
                 }
             });
         }

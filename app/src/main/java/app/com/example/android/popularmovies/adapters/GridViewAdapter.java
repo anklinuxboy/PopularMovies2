@@ -6,42 +6,61 @@ import android.support.v4.widget.CursorAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.BaseAdapter;
 import android.widget.ImageView;
 
 import com.squareup.picasso.Picasso;
 
+import java.util.List;
+
 import app.com.example.android.popularmovies.CustomTextDrawable;
 import app.com.example.android.popularmovies.R;
+import app.com.example.android.popularmovies.models.MovieInfo;
 import app.com.example.android.popularmovies.views.MoviesFragment;
 
-/**
- * Created by ankit on 3/6/16.
- */
-public class GridViewAdapter extends CursorAdapter {
+public class GridViewAdapter extends BaseAdapter {
 
-    public GridViewAdapter(Context context, Cursor c, int flags) {
-        super(context, c, flags);
-    }
+    private List<MovieInfo> movies;
+    private Context context;
 
-    private String getPosterUrlFromCursor(Cursor cursor) {
-        return cursor.getString(MoviesFragment.COL_MOVIE_URL);
+    public GridViewAdapter(Context context, List<MovieInfo> movies) {
+        this.context = context;
+        this.movies = movies;
     }
 
     @Override
-    public View newView(Context context, Cursor cursor, ViewGroup parent) {
-        return LayoutInflater.from(context).inflate(R.layout.fragment_grid, parent, false);
+    public int getCount() {
+        return movies.size();
     }
 
     @Override
-    public void bindView(View view, Context context, Cursor cursor) {
+    public Object getItem(int position) {
+        return null;
+    }
+
+    @Override
+    public long getItemId(int position) {
+        return 0;
+    }
+
+    @Override
+    public View getView(int position, View convertView, ViewGroup parent) {
+        MovieInfo movie = movies.get(position);
         ImageView imageView;
-
-        imageView = (ImageView) view.findViewById(R.id.movie_image);
+        View view = convertView;
+        if (view == null) {
+            view = View.inflate(context, R.layout.fragment_grid, null);
+            imageView = view.findViewById(R.id.movie_image);
+        } else {
+            imageView = view.findViewById(R.id.movie_image);
+        }
 
         Picasso.with(context)
-                .load(getPosterUrlFromCursor(cursor))
-                .placeholder(new CustomTextDrawable(cursor.getString(MoviesFragment.COL_MOVIE_TITLE)))
+                .load(movie.getPosterUrl())
+                .placeholder(new CustomTextDrawable(movie.getTitle()))
                 .into(imageView);
+
+        return view;
     }
 }
 

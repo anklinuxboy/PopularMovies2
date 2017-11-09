@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity implements MoviesFragment.Ca
         if (setting != null && !setting.equals(movieSetting)) {
             DetailFragment df = (DetailFragment) getSupportFragmentManager().findFragmentByTag(DETAILFRAGMENTTAG);
             if (df != null) {
-                df.onSettingChanged();
+                //df.onSettingChanged();
             }
         }
     }

@@ -5,9 +5,9 @@ import android.app.Application;
 import com.facebook.stetho.Stetho;
 
 import app.com.example.android.popularmovies.di.AppComponent;
+import app.com.example.android.popularmovies.di.DaggerAppComponent;
 import app.com.example.android.popularmovies.di.DbModule;
 import app.com.example.android.popularmovies.di.AppModule;
-import app.com.example.android.popularmovies.di.DaggerAppComponent;
 import app.com.example.android.popularmovies.di.NetModule;
 import timber.log.Timber;
 

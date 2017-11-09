@@ -52,7 +52,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class DetailFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
+public class DetailFragment extends Fragment {
 
     @Inject
     MovieService movieService;
@@ -63,17 +63,6 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     private ArrayAdapter<String> trailerAdapter;
     private ListView listViewReviews;
     private ListView trailerList;
-    private static final String[] MOVIE_PROJECTION_COLUMNS = {
-            MovieContract.MovieEntry._ID,
-            MovieContract.MovieEntry.COLUMN_MOVIE_ID,
-            MovieContract.MovieEntry.COLUMN_TITLE,
-            MovieContract.MovieEntry.COLUMN_YEAR,
-            MovieContract.MovieEntry.COLUMN_RATING,
-            MovieContract.MovieEntry.COLUMN_SYNOPSIS,
-            MovieContract.MovieEntry.COLUMN_FAVORITE,
-            MovieContract.MovieEntry.COLUMN_SORT_SETTING,
-            MovieContract.MovieEntry.COLUMN_IMAGE_URL
-    };
 
     private static final String LOG_TAG = DetailFragment.class.getSimpleName();
     public static final String DETAIL_URI = "URI";
@@ -113,14 +102,13 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
         listViewReviews = rootView.findViewById(R.id.review_list_view);
         trailerList = rootView.findViewById(R.id.trailer_list_view);
-        getLoaderManager().initLoader(DETAIL_LOADER_ID, null, this);
 
         return rootView;
     }
 
-    public void onSettingChanged() {
-        getLoaderManager().restartLoader(DETAIL_LOADER_ID, null, this);
-    }
+//    public void onSettingChanged() {
+//        getLoaderManager().restartLoader(DETAIL_LOADER_ID, null, this);
+//    }
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
@@ -143,86 +131,86 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         return sendIntent;
     }
 
-    @Override
-    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        if (movieUri != null) {
-            String movieID = movieUri.getLastPathSegment();
-            Uri newMovieUri = MovieContract.MovieEntry.buildUriWithId(Long.parseLong(movieID));
-            //Log.d(LOG_TAG, "movie uri " + movieUri);
-            return new CursorLoader(getActivity(),
-                    newMovieUri,
-                    MOVIE_PROJECTION_COLUMNS,
-                    null,
-                    null,
-                    null);
-        }
-        return null;
-    }
-
-    @Override
-    public void onLoadFinished(Loader<Cursor> loader, final Cursor cursor) {
-        if (cursor != null) {
-            cursor.moveToFirst();
-            //Log.d(LOG_TAG, "cursor ID on load finished " + cursor.getLong(0));
-            //Log.d(LOG_TAG, "cursor count " + cursor.getCount());
-            TextView rating = (TextView) getView().findViewById(R.id.rating);
-            TextView release = (TextView) getView().findViewById(R.id.release);
-            TextView plot = (TextView) getView().findViewById(R.id.plot);
-            ImageView imageView = (ImageView) getView().findViewById(R.id.poster);
-            TextView title = (TextView) getView().findViewById(R.id.title1);
-
-            CheckBox checkBox = (CheckBox) getView().findViewById(R.id.star);
-            ImageView emptyView = (ImageView) getView().findViewById(R.id.empty_view);
-            emptyView.setVisibility(View.VISIBLE);
-
-            checkBox.setVisibility(View.VISIBLE);
-
-            checkBox.setChecked(cursor.getString(MoviesFragment.COL_MOVIE_FAV).equals("1"));
-
-            checkBox.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    boolean checked = ((CheckBox)v).isChecked();
-                    String selection = MovieContract.MovieEntry._ID + " = ? ";
-                    String[] selectionArgs = new String[]{Long.toString(cursor.getLong(MoviesFragment.COL_ID))};
-                    if (checked) {
-                        //Log.d(LOG_TAG, "onClick checked");
-                        ContentValues values = new ContentValues();
-                        values.put(MovieContract.MovieEntry.COLUMN_FAVORITE, "1");
-                        getContext().getContentResolver().update(MovieContract.CONTENT_URI, values, selection, selectionArgs);
-                    } else {
-                        ContentValues values = new ContentValues();
-                        values.put(MovieContract.MovieEntry.COLUMN_FAVORITE, "0");
-                        getContext().getContentResolver().update(MovieContract.CONTENT_URI, values, selection, selectionArgs);
-                    }
-                }
-            });
-
-            title.setTextColor(Color.WHITE);
-            title.setText(cursor.getString(MoviesFragment.COL_MOVIE_TITLE));
-
-            release.setText(cursor.getString(MoviesFragment.COL_MOVIE_YEAR));
-
-            rating.setText(cursor.getString(MoviesFragment.COL_MOVIE_RATING));
-
-            plot.setText(cursor.getString(MoviesFragment.COL_MOVIE_SYNOPSIS));
-
-            String id = cursor.getString(MoviesFragment.COL_MOVIE_ID);
-
-            Picasso.with(getContext())
-                    .load(cursor.getString(MoviesFragment.COL_MOVIE_URL))
-                    .placeholder(new CustomTextDrawable(cursor.getString(MoviesFragment.COL_MOVIE_TITLE)))
-                    .fit()
-                    .into(imageView);
-
-            if (isNetwork) {
-                getTrailersReviews(id);
-            }
-        }
-    }
-
-    @Override
-    public void onLoaderReset(Loader<Cursor> loader) {}
+//    @Override
+//    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+//        if (movieUri != null) {
+//            String movieID = movieUri.getLastPathSegment();
+//            Uri newMovieUri = MovieContract.MovieEntry.buildUriWithId(Long.parseLong(movieID));
+//            //Log.d(LOG_TAG, "movie uri " + movieUri);
+//            return new CursorLoader(getActivity(),
+//                    newMovieUri,
+//                    MOVIE_PROJECTION_COLUMNS,
+//                    null,
+//                    null,
+//                    null);
+//        }
+//        return null;
+//    }
+//
+//    @Override
+//    public void onLoadFinished(Loader<Cursor> loader, final Cursor cursor) {
+//        if (cursor != null) {
+//            cursor.moveToFirst();
+//            //Log.d(LOG_TAG, "cursor ID on load finished " + cursor.getLong(0));
+//            //Log.d(LOG_TAG, "cursor count " + cursor.getCount());
+//            TextView rating = (TextView) getView().findViewById(R.id.rating);
+//            TextView release = (TextView) getView().findViewById(R.id.release);
+//            TextView plot = (TextView) getView().findViewById(R.id.plot);
+//            ImageView imageView = (ImageView) getView().findViewById(R.id.poster);
+//            TextView title = (TextView) getView().findViewById(R.id.title1);
+//
+//            CheckBox checkBox = (CheckBox) getView().findViewById(R.id.star);
+//            ImageView emptyView = (ImageView) getView().findViewById(R.id.empty_view);
+//            emptyView.setVisibility(View.VISIBLE);
+//
+//            checkBox.setVisibility(View.VISIBLE);
+//
+//            checkBox.setChecked(cursor.getString(MoviesFragment.COL_MOVIE_FAV).equals("1"));
+//
+//            checkBox.setOnClickListener(new View.OnClickListener() {
+//                @Override
+//                public void onClick(View v) {
+//                    boolean checked = ((CheckBox)v).isChecked();
+//                    String selection = MovieContract.MovieEntry._ID + " = ? ";
+//                    String[] selectionArgs = new String[]{Long.toString(cursor.getLong(MoviesFragment.COL_ID))};
+//                    if (checked) {
+//                        //Log.d(LOG_TAG, "onClick checked");
+//                        ContentValues values = new ContentValues();
+//                        values.put(MovieContract.MovieEntry.COLUMN_FAVORITE, "1");
+//                        getContext().getContentResolver().update(MovieContract.CONTENT_URI, values, selection, selectionArgs);
+//                    } else {
+//                        ContentValues values = new ContentValues();
+//                        values.put(MovieContract.MovieEntry.COLUMN_FAVORITE, "0");
+//                        getContext().getContentResolver().update(MovieContract.CONTENT_URI, values, selection, selectionArgs);
+//                    }
+//                }
+//            });
+//
+//            title.setTextColor(Color.WHITE);
+//            title.setText(cursor.getString(MoviesFragment.COL_MOVIE_TITLE));
+//
+//            release.setText(cursor.getString(MoviesFragment.COL_MOVIE_YEAR));
+//
+//            rating.setText(cursor.getString(MoviesFragment.COL_MOVIE_RATING));
+//
+//            plot.setText(cursor.getString(MoviesFragment.COL_MOVIE_SYNOPSIS));
+//
+//            String id = cursor.getString(MoviesFragment.COL_MOVIE_ID);
+//
+//            Picasso.with(getContext())
+//                    .load(cursor.getString(MoviesFragment.COL_MOVIE_URL))
+//                    .placeholder(new CustomTextDrawable(cursor.getString(MoviesFragment.COL_MOVIE_TITLE)))
+//                    .fit()
+//                    .into(imageView);
+//
+//            if (isNetwork) {
+//                getTrailersReviews(id);
+//            }
+//        }
+//    }
+//
+//    @Override
+//    public void onLoaderReset(Loader<Cursor> loader) {}
 
     public void getTrailersReviews(String movieId) {
         getMovieTrailers(movieId);
