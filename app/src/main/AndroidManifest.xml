@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="app.com.example.android.popularmovies">
-    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application
         android:allowBackup="true"
         android:name=".MoviesApplication"
@@ -21,22 +23,24 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".views.SettingsActivity"
+        <activity
+            android:name=".views.SettingsActivity"
             android:label="@string/title_settings"
             android:parentActivityName=".views.MainActivity"
             android:theme="@style/AppTheme.NoActionBar">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".views.MainActivity"/>
+                android:value=".views.MainActivity" />
         </activity>
 
-        <activity android:name=".views.DetailView"
+        <activity
+            android:name=".views.DetailView"
             android:label="DetailView"
             android:parentActivityName=".views.MainActivity"
             android:theme="@style/AppTheme.NoActionBar">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".views.MainActivity"/>
+                android:value=".views.MainActivity" />
         </activity>
 
         <provider

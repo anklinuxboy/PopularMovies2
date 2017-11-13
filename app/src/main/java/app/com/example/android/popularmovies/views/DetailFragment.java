@@ -1,16 +1,10 @@
 package app.com.example.android.popularmovies.views;
 
 import android.content.ActivityNotFoundException;
-import android.content.ContentValues;
 import android.content.Intent;
-import android.database.Cursor;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.CursorLoader;
-import android.support.v4.content.Loader;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.ShareActionProvider;
@@ -23,12 +17,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.CheckBox;
-import android.widget.ImageView;
 import android.widget.ListView;
-import android.widget.TextView;
-
-import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,11 +27,9 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import app.com.example.android.popularmovies.BuildConfig;
-import app.com.example.android.popularmovies.CustomTextDrawable;
 import app.com.example.android.popularmovies.MoviesApplication;
 import app.com.example.android.popularmovies.R;
 import app.com.example.android.popularmovies.Utility;
-import app.com.example.android.popularmovies.data.MovieContract;
 import app.com.example.android.popularmovies.models.MovieReviewResponse;
 import app.com.example.android.popularmovies.models.MovieReviews;
 import app.com.example.android.popularmovies.models.MovieTrailerResponse;
@@ -98,7 +85,7 @@ public class DetailFragment extends Fragment {
         activity.getSupportActionBar().setDisplayShowTitleEnabled(false);
         activity.getSupportActionBar().setDisplayHomeAsUpEnabled(false);
 
-        ((MoviesApplication)(getActivity().getApplication())).getAppComponent().inject(this);
+        ((MoviesApplication) (getActivity().getApplication())).getAppComponent().inject(this);
 
         listViewReviews = rootView.findViewById(R.id.review_list_view);
         trailerList = rootView.findViewById(R.id.trailer_list_view);

@@ -81,23 +81,23 @@ public class MovieProvider extends ContentProvider {
         }
 
         return mDBHelper.getReadableDatabase().query(MovieContract.MovieEntry.TABLE_NAME,
-                                                    projection,
-                                                    selection,
-                                                    selectionArgs,
-                                                    null,
-                                                    null,
-                                                    sortOrder);
+                projection,
+                selection,
+                selectionArgs,
+                null,
+                null,
+                sortOrder);
     }
 
     private Cursor getMovie(Uri uri, String[] projection, String selection, String[] selectionArgs,
                             String sortOrder) {
         return mDBHelper.getReadableDatabase().query(MovieContract.MovieEntry.TABLE_NAME,
-                                                projection,
-                                                selection,
-                                                selectionArgs,
-                                                null,
-                                                null,
-                                                sortOrder);
+                projection,
+                selection,
+                selectionArgs,
+                null,
+                null,
+                sortOrder);
     }
 
     /*
@@ -105,7 +105,7 @@ public class MovieProvider extends ContentProvider {
      */
     @Override
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
-                                                    String sortOrder) {
+                        String sortOrder) {
         Cursor retCursor;
         int match = sMatcher.match(uri);
 
@@ -202,7 +202,7 @@ public class MovieProvider extends ContentProvider {
         matcher.addURI(MovieContract.CONTENT_AUTHORITY, MovieContract.PATH_MOVIE + "/#",
                 MOVIE_WITH_ID);
         matcher.addURI(MovieContract.CONTENT_AUTHORITY, MovieContract.PATH_MOVIE + "/*",
-                                                                          MOVIE_WITH_SORT_SETTING);
+                MOVIE_WITH_SORT_SETTING);
 
         return matcher;
     }

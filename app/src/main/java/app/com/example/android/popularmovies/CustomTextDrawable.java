@@ -14,6 +14,7 @@ import android.graphics.drawable.Drawable;
 public class CustomTextDrawable extends Drawable {
     private Paint paint;
     private String title;
+
     public CustomTextDrawable(String mtitle) {
         this.title = mtitle;
         this.paint = new Paint();

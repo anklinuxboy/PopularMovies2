@@ -10,8 +10,6 @@ import android.support.annotation.NonNull;
 
 import com.google.gson.annotations.SerializedName;
 
-import javax.annotation.Nonnull;
-
 /**
  * Created by ankit on 3/7/16.
  */
@@ -71,7 +69,8 @@ public class MovieInfo implements Parcelable {
         dest.writeString(getId());
     }
 
-    public MovieInfo() {}
+    public MovieInfo() {
+    }
 
     // Creator
     public static final Parcelable.Creator CREATOR

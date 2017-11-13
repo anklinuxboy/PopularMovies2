@@ -1,9 +1,6 @@
 package app.com.example.android.popularmovies.adapters;
 
 import android.content.Context;
-import android.database.Cursor;
-import android.support.v4.widget.CursorAdapter;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -16,7 +13,7 @@ import java.util.List;
 import app.com.example.android.popularmovies.CustomTextDrawable;
 import app.com.example.android.popularmovies.R;
 import app.com.example.android.popularmovies.models.MovieInfo;
-import app.com.example.android.popularmovies.views.MoviesFragment;
+import timber.log.Timber;
 
 public class GridViewAdapter extends BaseAdapter {
 
@@ -59,7 +56,6 @@ public class GridViewAdapter extends BaseAdapter {
                 .load(movie.getPosterUrl())
                 .placeholder(new CustomTextDrawable(movie.getTitle()))
                 .into(imageView);
-
         return view;
     }
 }

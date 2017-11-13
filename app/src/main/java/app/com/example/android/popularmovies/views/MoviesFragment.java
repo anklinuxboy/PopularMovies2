@@ -8,9 +8,6 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.CursorLoader;
-import android.support.v4.content.Loader;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,16 +26,10 @@ import app.com.example.android.popularmovies.MoviesApplication;
 import app.com.example.android.popularmovies.R;
 import app.com.example.android.popularmovies.Utility;
 import app.com.example.android.popularmovies.adapters.GridViewAdapter;
-import app.com.example.android.popularmovies.data.MovieContract;
 import app.com.example.android.popularmovies.data.MovieDatabase;
 import app.com.example.android.popularmovies.models.MovieInfo;
 import app.com.example.android.popularmovies.observers.MovieFragmentObserver;
 import app.com.example.android.popularmovies.viewmodels.MovieFragmentViewModel;
-import io.reactivex.Completable;
-import io.reactivex.CompletableObserver;
-import io.reactivex.Scheduler;
-import io.reactivex.internal.operators.completable.CompletableFromAction;
-import io.reactivex.schedulers.Schedulers;
 import timber.log.Timber;
 
 public class MoviesFragment extends Fragment {
@@ -64,7 +55,7 @@ public class MoviesFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        ((MoviesApplication)getActivity().getApplication()).getAppComponent().inject(this);
+        ((MoviesApplication) getActivity().getApplication()).getAppComponent().inject(this);
         getLifecycle().addObserver(new MovieFragmentObserver());
     }
 
@@ -83,33 +74,10 @@ public class MoviesFragment extends Fragment {
         super.onSaveInstanceState(outState);
     }
 
-//    @Override
-//    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-//        //Log.d(LOG_TAG, "Inside onCreateLoader");
-//        String sortPref = Utility.getPreferredSortSetting(getContext());
-//
-//        String sort = MovieContract.MovieEntry.COLUMN_TITLE + " DESC";
-//        Uri movieUri = MovieContract.MovieEntry.buildUriWithSortSetting(sortPref);
-//    }
-
-//    @Override
-//    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
-//        //Log.d(LOG_TAG, "onLoadFinished");
-//        if (cursor == null) {
-//            if (!isNetworkAvailable()) {
-//
-//            }
-//        } else {
-//            mAdapter.swapCursor(cursor);
-//            if (listPosition != ListView.INVALID_POSITION) {
-//                gridview.smoothScrollToPosition(listPosition);
-//            }
-//        }
-//    }
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        Timber.d("test oncreateview");
         mAdapter = new GridViewAdapter(getContext(), movies);
         setHasOptionsMenu(true);
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
@@ -126,6 +94,14 @@ public class MoviesFragment extends Fragment {
         gridview.setAdapter(mAdapter);
 
         viewModel = ViewModelProviders.of(getActivity()).get(MovieFragmentViewModel.class);
+        viewModel.loadMovies();
+        viewModel.getMovieInfo().observe(this, movieInfos -> {
+            this.movies.clear();
+            if (movieInfos != null) {
+                this.movies.addAll(movieInfos);
+                mAdapter.notifyDataSetChanged();
+            }
+        });
 
         gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -155,22 +131,6 @@ public class MoviesFragment extends Fragment {
         return rootView;
     }
 
-    private void addMovie(MovieInfo movie) {
-        String preference = Utility.getPreferredSortSetting(getContext());
-
-        movie.setPosterUrl("http://image.tmdb.org/t/p/w185/" + movie.getPosterPath());
-        movie.setSortSetting(preference);
-        movie.setVoterRating(movie.getRating() + "/10");
-
-        insertMovieInDB(movie).subscribe();
-    }
-
-    private Completable insertMovieInDB(MovieInfo movie) {
-        return Completable.fromAction(() ->
-            movieDatabase.getMovieDao().insertMovie(movie))
-        .subscribeOn(Schedulers.io());
-    }
-
     @Override
     public void onStart() {
         super.onStart();
@@ -179,17 +139,6 @@ public class MoviesFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        this.movies.clear();
-        if (isNetworkAvailable())
-            viewModel.loadMovies();
-            viewModel.getMovieInfo().observe(this, movieInfos -> {
-                for (MovieInfo movie : movieInfos) {
-                    addMovie(movie);
-                }
-
-                this.movies.addAll(movieInfos);
-                mAdapter.notifyDataSetChanged();
-            });
     }
 
     public boolean isNetworkAvailable() {

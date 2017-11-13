@@ -9,7 +9,6 @@
             android:entries="@array/sort_pref"
             android:entryValues="@array/sort_pref_values"
             android:defaultValue="popular"
-            android:summary="%s">
-        </ListPreference>
+            android:summary="%s"></ListPreference>
     </PreferenceCategory>
 </PreferenceScreen>

@@ -22,6 +22,7 @@ public class TestDB extends AndroidTestCase {
     public void setup() {
         deleteTheDatabase();
     }
+
     /*
      * Test if DB is created succesfully
      */
@@ -65,7 +66,7 @@ public class TestDB extends AndroidTestCase {
         do {
             String columnName = c.getString(columnNameIndex);
             movieColumns.remove(columnName);
-        } while(c.moveToNext());
+        } while (c.moveToNext());
 
         assertTrue("Error: The database doesn't contain all of the required location entry columns",
                 movieColumns.isEmpty());
@@ -83,14 +84,14 @@ public class TestDB extends AndroidTestCase {
         assertTrue("Not true", rowId != -1);
 
         Cursor cursor = db.query(MovieContract.MovieEntry.TABLE_NAME,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null);
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
 
-        assertTrue( "Error: No Records returned from location query", cursor.moveToFirst() );
+        assertTrue("Error: No Records returned from location query", cursor.moveToFirst());
 
         TestUtilities.validateCurrentRecord("Incorrect insertion", cursor, movieValues);
         cursor.close();

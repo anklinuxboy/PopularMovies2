@@ -12,7 +12,8 @@ import dagger.Provides;
 @Module
 public class DbModule {
 
-    public DbModule() {}
+    public DbModule() {
+    }
 
     @Provides
     @Singleton

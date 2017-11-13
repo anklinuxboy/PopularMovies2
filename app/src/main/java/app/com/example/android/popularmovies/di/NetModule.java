@@ -10,6 +10,7 @@ import dagger.Provides;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 import static app.com.example.android.popularmovies.Constants.API_BASE_URL;
@@ -17,12 +18,13 @@ import static app.com.example.android.popularmovies.Constants.API_BASE_URL;
 @Module
 public class NetModule {
 
-    public NetModule() {}
+    public NetModule() {
+    }
 
     @Provides
     @Singleton
     Cache provideCache(Application application) {
-        int cacheSize = 15*1024*1024;
+        int cacheSize = 15 * 1024 * 1024;
         Cache cache = new Cache(application.getCacheDir(), cacheSize);
         return cache;
     }
@@ -40,6 +42,7 @@ public class NetModule {
     Retrofit provideRetrofit(OkHttpClient client) {
         return new Retrofit.Builder()
                 .addConverterFactory(GsonConverterFactory.create())
+                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                 .baseUrl(API_BASE_URL)
                 .client(client)
                 .build();

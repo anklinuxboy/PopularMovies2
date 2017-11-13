@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:paddingTop="5dp">
+
     <ImageView
         android:layout_width="185dp"
         android:layout_height="250dp"
         android:scaleType="fitXY"
         android:adjustViewBounds="true"
         android:transitionName="@string/poster_transition"
-        android:id="@+id/movie_image"/>
+        android:id="@+id/movie_image" />
 
 </FrameLayout>

@@ -28,8 +28,7 @@
         android:orientation="horizontal"
         android:layout_marginTop="?attr/actionBarSize">
 
-        <fragment
-            xmlns:app="http://schemas.android.com/apk/res-auto"
+        <fragment xmlns:app="http://schemas.android.com/apk/res-auto"
             xmlns:tools="http://schemas.android.com/tools"
             android:id="@+id/fragment"
             android:name="app.com.example.android.popularmovies.views.MoviesFragment"
@@ -37,15 +36,13 @@
             android:layout_height="match_parent"
             android:layout_weight="3"
             app:layout_behavior="@string/appbar_scrolling_view_behavior"
-            tools:layout="@layout/fragment_main"
-            />
+            tools:layout="@layout/fragment_main" />
 
         <FrameLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="5"
-            android:id="@+id/detailview">
-        </FrameLayout>
+            android:id="@+id/detailview"></FrameLayout>
     </LinearLayout>
 
 </android.support.design.widget.CoordinatorLayout>

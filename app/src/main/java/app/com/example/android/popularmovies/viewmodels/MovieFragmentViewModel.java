@@ -2,66 +2,52 @@ package app.com.example.android.popularmovies.viewmodels;
 
 import android.app.Application;
 import android.arch.lifecycle.AndroidViewModel;
-import android.arch.lifecycle.LifecycleObserver;
 import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.MutableLiveData;
-import android.arch.lifecycle.ViewModel;
-import android.content.ContentValues;
-import android.content.Context;
-import android.database.Cursor;
-import android.widget.Toast;
 
 import java.util.List;
+import java.util.Observable;
 
 import javax.inject.Inject;
 
-import app.com.example.android.popularmovies.BuildConfig;
 import app.com.example.android.popularmovies.MoviesApplication;
 import app.com.example.android.popularmovies.Utility;
-import app.com.example.android.popularmovies.data.MovieContract;
 import app.com.example.android.popularmovies.models.MovieInfo;
-import app.com.example.android.popularmovies.models.MoviesResponse;
+import app.com.example.android.popularmovies.repositories.MoviesRepository;
 import app.com.example.android.popularmovies.webservices.MovieService;
-import dagger.Provides;
-import retrofit2.Call;
-import retrofit2.Response;
+import io.reactivex.Completable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.schedulers.Schedulers;
+import timber.log.Timber;
 
 public class MovieFragmentViewModel extends AndroidViewModel {
     @Inject
     MovieService movieService;
-    Application application;
+    private Application application;
 
     private MutableLiveData<List<MovieInfo>> movieInfo;
+    private MoviesRepository repository;
 
     public MovieFragmentViewModel(Application application) {
         super(application);
         this.application = application;
-        ((MoviesApplication)application).getAppComponent().inject(this);
+        ((MoviesApplication) application).getAppComponent().inject(this);
+        repository = new MoviesRepository(application);
     }
 
-    public MutableLiveData<List<MovieInfo>> getMovieInfo() {
+    public LiveData<List<MovieInfo>> getMovieInfo() {
+        if (movieInfo == null) {
+            movieInfo = new MutableLiveData<>();
+        }
         return movieInfo;
     }
 
     public void loadMovies() {
-        movieInfo = new MutableLiveData<>();
         // Get the Preference settings Popular is default setting
-        String sortPref = Utility.getPreferredSortSetting(this.application);
-        if (!sortPref.equals("favorite")) {
-
-            Call<MoviesResponse> call = movieService.getMovies(sortPref, BuildConfig.OPEN_TMDB_API_KEY);
-
-            call.enqueue(new retrofit2.Callback<MoviesResponse>() {
-                @Override
-                public void onResponse(Call<MoviesResponse> call, Response<MoviesResponse> response) {
-                    movieInfo.setValue(response.body().getMovies());
-                }
-
-                @Override
-                public void onFailure(Call<MoviesResponse> call, Throwable t) {
-                    Toast.makeText(application.getApplicationContext(), "Failure", Toast.LENGTH_SHORT).show();
-                }
-            });
-        }
+        String sortPref = Utility.getPreferredSortSetting(application);
+        repository.getMovies(sortPref)
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnComplete(() -> movieInfo.setValue(repository.getMoviesLiveData().getValue()))
+                .subscribe();
     }
 }

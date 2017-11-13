@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity implements MoviesFragment.Ca
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.detailview, new DetailFragment(), DETAILFRAGMENTTAG)
                     .commit();
-        }  else {
+        } else {
             twoPane = false;
         }
     }
@@ -41,8 +41,7 @@ public class MainActivity extends AppCompatActivity implements MoviesFragment.Ca
     @Override
     public boolean onContextItemSelected(MenuItem item) {
         int id = item.getItemId();
-        if (id == R.id.action_settings)
-        {
+        if (id == R.id.action_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
             return true;
         }

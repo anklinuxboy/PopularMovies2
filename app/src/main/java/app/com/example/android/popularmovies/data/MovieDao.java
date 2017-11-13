@@ -1,5 +1,7 @@
 package app.com.example.android.popularmovies.data;
 
+import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.MutableLiveData;
 import android.arch.persistence.room.Dao;
 import android.arch.persistence.room.Delete;
 import android.arch.persistence.room.Insert;
@@ -13,8 +15,9 @@ import app.com.example.android.popularmovies.models.MovieInfo;
 
 @Dao
 public interface MovieDao {
+
     @Query("SELECT * FROM movies")
-    List<MovieInfo> getAll();
+    LiveData<List<MovieInfo>> getAll();
 
     @Query("SELECT * FROM movies where movieId LIKE :uid LIMIT 1")
     MovieInfo findById(String uid);
@@ -23,10 +26,10 @@ public interface MovieDao {
     MovieInfo findByTitle(String title);
 
     @Query("SELECT * FROM movies where sort_setting LIKE :sort ORDER BY title DESC")
-    List<MovieInfo> getMoviesBySortSetting(String sort);
+    LiveData<List<MovieInfo>> getMoviesBySortSetting(String sort);
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void insertAll(MovieInfo... movies);
+    void insertAll(List<MovieInfo> movies);
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertMovie(MovieInfo movie);
